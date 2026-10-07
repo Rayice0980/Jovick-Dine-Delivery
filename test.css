@@ -1,0 +1,308 @@
+/* Home css */
+body {
+  margin: 0;
+  padding: 0;
+}
+.logo {
+  width: 20%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo img {
+  width: 33%;
+  border: 2px solid white;
+  border-radius: 50px;
+}
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 0;
+  cursor: pointer;
+}
+
+.background {
+  background: rgb(52, 52, 52);
+  background-blend-mode: darken;
+  background-size: cover;
+}
+
+.nav-list {
+  width: 70%;
+  display: flex;
+  align-items: center;
+}
+
+.nav-list li {
+  list-style: none;
+  padding: 26px 30px;
+}
+
+.nav-list li a {
+  text-decoration: none;
+  color: white;
+}
+
+.nav-list li a:hover {
+  color: rgb(0, 0, 0);
+}
+
+.rightnav {
+  width: 30%;
+  text-align: right;
+}
+
+#search {
+  padding: 5px;
+  font-size: 17px;
+  border: 2px solid grey;
+  border-radius: 9px;
+}
+
+.first-section {
+  background-color: green;
+  height: 400px;
+}
+
+.secondsection {
+  background-color: blue;
+  height: 400px;
+}
+
+.box-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  max-width: 80%;
+  margin: auto;
+  height: 80%;
+}
+
+.firsthalf {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.firstHalf img {
+  display: flex;
+  border-radius: 9050px;
+}
+.secondhalf {
+  width: 30%;
+}
+
+.secondhalf img {
+  width: 70%;
+  border: 4px solid white;
+  border-radius: 150px;
+  display: block;
+  margin: auto;
+}
+
+.text-big {
+  font-family: "Piazzolla", serif;
+  font-weight: bold;
+  font-size: 35px;
+}
+
+.text-small {
+  font-size: 18px;
+  font-family: 'Sansita Swashed', cursive;
+  text-align: center;
+}
+
+
+
+.section {
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90%;
+  margin: auto;
+}
+
+.section-Left {
+  flex-direction: row-reverse;
+}
+
+.paras {
+  padding: 0px 65px;
+}
+
+.thumbnail img {
+  width: 250px;
+  border: 2px solid black;
+  border-radius: 26px;
+  margin-top: 19px;
+}
+
+
+
+/* Abuot us css */
+
+/* html {
+   scroll-behaviour: smooth;
+  } */
+
+:root {
+   --navbar-height: 59px;
+  }
+
+.about-section {
+  background-color: rgb(255, 255, 255);
+  height: 100vh;
+}
+
+.about-section .box-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgb(0, 0, 0);
+  max-width: 50%;
+  margin: auto;
+  height: 80%;
+}
+
+.firstHalf .big {
+  font-family: "Piazzolla", serif;
+  font-weight: bold;
+  font-size: 41px;
+  text-align: center;
+}
+
+.firstHalf .small {
+
+  text-align: center;
+  font-size: 18px;
+}
+
+.service {
+  margin: 34px;
+  /* border: solid; */
+}
+
+
+.service .box {
+  padding: 100px;
+  margin: 3px 6px;
+  border-radius: 28px;
+}
+
+.service .box img {
+  margin-top: 10px;
+  height: 150px;
+  margin: auto;
+  display: block;
+  border-radius: 200px;
+}
+
+.service .box p {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+#services {
+  margin: 34px;
+  display: flex;
+}
+
+#services .box {
+  padding: 100px;
+  margin: 3px 6px;
+  border-radius: 28px;
+}
+
+#services .box img {
+  margin-top: 10px;
+  height: 150px;
+  margin: auto;
+  display: block;
+  border-radius: 100px;
+}
+
+#services .box p {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+
+
+
+
+/* Contact us page css */
+
+
+
+
+/* @media screen and (max-width: 650px) {
+  .column {
+    width: 100%;
+    display: block;
+  }
+} */
+
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  max-width: 50%;
+  margin: auto;
+  height: 80%;
+}
+
+.text-bold {
+     font-family: "Piazzolla", serif;
+     font-weight: bold;
+     font-size: 41px;
+     text-align: center;
+    }
+
+.small-text {
+     /* font-family: "Sansita Swashed", cursive; */
+     font-size: 18px;
+     text-align: center;
+    }
+
+#service {
+  margin: 34px;
+  display: flex;
+}
+
+.service .box {
+  padding: 45px;
+  margin: 3px 6px;
+  border-radius: 28px;
+}
+
+#service .box img {
+  margin-top: 20px;
+  height: 100px;
+  margin: auto;
+  display: block;
+  border-radius: 200px;
+}
+
+#service .box p {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+
+.center {
+     text-align: center;
+    }
+
+.text-footer {
+     text-align: center;
+     padding: 30px 0;
+     font-family: "Ubuntu", sans-serif;
+     display: flex;
+     justify-content: center;
+    }
