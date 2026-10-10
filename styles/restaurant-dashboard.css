@@ -533,3 +533,52 @@ body[data-page="restaurant-dashboard"] {
   .shared-dish-controls { grid-template-columns: minmax(0, 1fr) minmax(100px, .7fr); }
   .shared-dish-controls .btn { grid-column: 1 / -1; width: 100%; }
 }
+
+
+/* Daily availability: quick one-tap controls for saved everyday dishes. */
+.daily-availability-list {
+  display: grid;
+  gap: 10px;
+}
+.daily-availability-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  border: 1px solid var(--rd-line);
+  border-radius: 13px;
+  background: #fff;
+}
+.daily-availability-details {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.daily-availability-details strong {
+  color: var(--rd-dark);
+  font-size: 1rem;
+}
+.daily-availability-details small {
+  color: var(--rd-muted);
+}
+.daily-status {
+  font-size: .8rem;
+  font-weight: 800;
+  color: #27663c;
+}
+.daily-availability-card.is-finished .daily-status {
+  color: #8a5b20;
+}
+.daily-availability-card .btn {
+  flex: 0 0 auto;
+}
+@media (max-width: 520px) {
+  .daily-availability-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .daily-availability-card .btn {
+    width: 100%;
+  }
+}
