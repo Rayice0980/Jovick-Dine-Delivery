@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#173f2b" />
+  <meta name="description" content="Secure administrator workspace for reviewing Jovick Dine Delivery restaurant applications." />
+  <title>Admin Review | Jovick Dine Delivery</title>
+  <link rel="stylesheet" href="styles/admin-dashboard.css" />
+</head>
+<body>
+  <header class="admin-topbar">
+    <a class="admin-brand" href="index.html"><span class="brand-mark">J</span><span>Jovick Dine Delivery<small>ADMIN WORKSPACE</small></span></a>
+    <div class="topbar-actions">
+      <span id="adminIdentity" class="admin-identity">Checking access…</span>
+      <button id="signOutButton" class="button button-outline" type="button">Sign out</button>
+    </div>
+  </header>
+  <main class="admin-main">
+    <section class="page-intro">
+      <p class="eyebrow">BUSINESS OPERATIONS</p>
+      <h1>Restaurant applications</h1>
+      <p>Review restaurant details before enabling menu management and order access. Only authorized administrators can make these decisions.</p>
+    </section>
+    <section class="summary-grid" aria-label="Application summary">
+      <article class="summary-card"><span>Awaiting review</span><strong id="pendingCount">—</strong><small>Requires a decision</small></article>
+      <article class="summary-card"><span>Approved</span><strong id="approvedCount">—</strong><small>Can manage menus and orders</small></article>
+      <article class="summary-card"><span>Rejected</span><strong id="rejectedCount">—</strong><small>Not approved for access</small></article>
+    </section>
+    <section class="applications-section">
+      <div class="section-heading">
+        <div><h2>Submitted businesses</h2><p id="lastUpdated">Applications are loaded securely from Supabase.</p></div>
+        <button id="refreshButton" class="button button-outline" type="button">↻ Refresh</button>
+      </div>
+      <div id="adminNotice" class="notice" role="status" aria-live="polite" hidden></div>
+      <div class="filter-row">
+        <label for="statusFilter">Show</label>
+        <select id="statusFilter">
+          <option value="pending">Awaiting review</option>
+          <option value="all">All applications</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div id="applicationList" class="application-list"><p class="loading-state">Checking your administrator access…</p></div>
+    </section>
+    <p class="security-note"><span aria-hidden="true">🔒</span> Review actions are validated by Supabase. This page does not grant administrator access by itself.</p>
+  </main>
+  <script src="scripts/app.js" defer></script>
+  <script type="module" src="scripts/admin-dashboard.js?v=20261010-admin-review"></script>
+</body>
+</html>
