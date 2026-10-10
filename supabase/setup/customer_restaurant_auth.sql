@@ -29,6 +29,8 @@ create table if not exists public.restaurants (
 alter table public.profiles enable row level security;
 alter table public.restaurants enable row level security;
 
+grant usage on schema public to authenticated;
+
 revoke all on table public.profiles from public, anon, authenticated;
 revoke all on table public.restaurants from public, anon, authenticated;
 
