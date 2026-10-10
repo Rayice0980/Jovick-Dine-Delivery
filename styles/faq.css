@@ -1,0 +1,2 @@
+/* FAQ PAGE ONLY. Shared layout and components are in site.css. */
+.faq-search{max-width:620px;margin:0 auto 24px}.faq-item[hidden]{display:none}.faq-item summary{cursor:pointer}.faq-empty{text-align:center;color:var(--muted);padding:24px}@media(max-width:600px){.faq-item{padding:18px}}
