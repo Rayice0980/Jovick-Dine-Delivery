@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     const [profileResult, menuResult] = await Promise.all([
       supabase.from("profiles").select("full_name, phone, account_type").eq("id", user.id).single(),
-      supabase.from("menu_items").select("id, name, price, restaurants!inner(status)").eq("is_available", true).not("restaurant_id", "is", null).eq("restaurants.status", "approved")
+      supabase.rpc("get_public_available_menu")
     ]);
     if (profileResult.error) throw profileResult.error;
     if (menuResult.error) throw menuResult.error;
@@ -72,6 +72,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("checkoutPhone").value = profileResult.data.phone || "";
     document.getElementById("checkoutEmail").value = user.email || "";
     menuItems = new Map(menuResult.data.map((food) => [Number(food.id), { name: food.name, price: Number(food.price) }]));
+
+    // Keep accepted pre-orders available in checkout even if the customer opens checkout directly.
+    const { data: acceptedRequests, error: acceptedRequestsError } = await supabase
+      .from("dish_preorder_requests")
+      .select("id,accepted_menu_item_id,quantity")
+      .eq("status", "accepted")
+      .not("accepted_menu_item_id", "is", null);
+    if (acceptedRequestsError) throw acceptedRequestsError;
+    let processed = [];
+    let savedCart = [];
+    try {
+      processed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+      savedCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+      if (!Array.isArray(processed)) processed = [];
+      if (!Array.isArray(savedCart)) savedCart = [];
+    } catch {
+      processed = [];
+      savedCart = [];
+    }
+    const processedSet = new Set(processed);
+    let cartChanged = false;
+    (acceptedRequests || []).forEach((request) => {
+      const requestId = String(request.id);
+      const itemId = Number(request.accepted_menu_item_id);
+      const quantity = Number(request.quantity);
+      if (processedSet.has(requestId) || !menuItems.has(itemId) || !Number.isInteger(quantity) || quantity < 1) return;
+      const existing = savedCart.find((item) => Number(item.id) === itemId);
+      if (existing) existing.qty = Number(existing.qty) + quantity;
+      else savedCart.push({ id: itemId, qty: quantity });
+      processedSet.add(requestId);
+      cartChanged = true;
+    });
+    if (cartChanged) {
+      localStorage.setItem("jovick-cart", JSON.stringify(savedCart));
+      localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
+    }
+
     const requestedFor = document.getElementById("requestedFor");
     if (requestedFor) {
       const minTime = new Date(Date.now() + 15 * 60 * 1000);
