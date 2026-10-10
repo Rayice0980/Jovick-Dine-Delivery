@@ -1096,10 +1096,28 @@ form .form-note {
   }
 }
 
-
-.form-note.is-error { color:#9b3434; }
-.order-success { border:1px solid #c9dfcd; background:#f0f8f1; color:#205c37; border-radius:14px; padding:18px; }
-.order-success h3 { margin:0 0 10px; font-size:21px; }
-.order-success p { margin:7px 0; font-size:13px; }
-.order-success .btn { margin-top:10px; }
-button:disabled { opacity:.6; cursor:not-allowed; }
+.form-note.is-error {
+  color: #9b3434;
+}
+.order-success {
+  border: 1px solid #c9dfcd;
+  background: #f0f8f1;
+  color: #205c37;
+  border-radius: 14px;
+  padding: 18px;
+}
+.order-success h3 {
+  margin: 0 0 10px;
+  font-size: 21px;
+}
+.order-success p {
+  margin: 7px 0;
+  font-size: 13px;
+}
+.order-success .btn {
+  margin-top: 10px;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
