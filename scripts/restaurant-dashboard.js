@@ -11,6 +11,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let user = null;
   let restaurant = null;
   let menuItems = [];
+  let sharedDishes = [];
+  let ownDishAvailability = [];
 
   const money = (value) => "₦" + Number(value || 0).toLocaleString("en-NG");
   const statusLabels = { received:"Awaiting confirmation", confirmed:"Confirmed", preparing:"Being prepared", out_for_delivery:"Out for delivery", delivered:"Delivered", cancelled:"Cancelled" };
@@ -84,7 +86,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     await loadMenu();
+    await loadSharedCatalogue();
+    await loadPreorderRequests();
     await loadOrders();
+    document.getElementById("catalogueSearch")?.addEventListener("input", renderSharedCatalogue);
+    document.getElementById("catalogueCategory")?.addEventListener("change", renderSharedCatalogue);
+    document.getElementById("refreshPreorders")?.addEventListener("click", loadPreorderRequests);
+    window.setInterval(() => { loadPreorderRequests().catch(() => {}); }, 30000);
   } catch (error) {
     showNotice(error.message || "We couldn't load your restaurant workspace. Please refresh and try again.", true);
   }
@@ -196,6 +204,136 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     addMenuSection("Everyday menu", "Your regular dishes customers can order whenever they are available.", everydayItems);
     addMenuSection("Special menu", "Extra dishes you add for selected days or occasions.", specialItems);
+  }
+
+  async function loadSharedCatalogue() {
+    const [catalogueResult, availabilityResult] = await Promise.all([
+      supabase.from("dish_catalog").select("id,name,category,description,image_url,sort_order").eq("is_active", true).order("sort_order").order("name"),
+      supabase.from("restaurant_dish_availability").select("dish_id,price,is_available,menu_type").eq("restaurant_id", restaurant.id)
+    ]);
+    if (catalogueResult.error) throw catalogueResult.error;
+    if (availabilityResult.error) throw availabilityResult.error;
+    sharedDishes = catalogueResult.data || [];
+    ownDishAvailability = availabilityResult.data || [];
+    renderSharedCatalogue();
+  }
+
+  function renderSharedCatalogue() {
+    const root = document.getElementById("sharedDishCatalogue");
+    if (!root) return;
+    const term = (document.getElementById("catalogueSearch")?.value || "").trim().toLowerCase();
+    const category = document.getElementById("catalogueCategory")?.value || "All";
+    const filtered = sharedDishes.filter(dish => (category === "All" || dish.category === category) && (!term || (dish.name + " " + dish.category).toLowerCase().includes(term)));
+    root.replaceChildren();
+    if (!filtered.length) {
+      root.append(safeElement("p", "empty-state", "No dishes match that search."));
+      return;
+    }
+    filtered.forEach(dish => {
+      const saved = ownDishAvailability.find(row => Number(row.dish_id) === Number(dish.id));
+      const row = safeElement("article", "shared-dish-row");
+      const info = safeElement("div", "shared-dish-info");
+      info.append(safeElement("strong", "", dish.name), safeElement("small", "", dish.category));
+      if (dish.description) info.append(safeElement("p", "", dish.description));
+      const controls = safeElement("div", "shared-dish-controls");
+      const priceLabel = safeElement("label", "", "Your price (₦)");
+      const price = document.createElement("input");
+      price.type = "number"; price.min = "1"; price.max = "10000000"; price.step = "1";
+      price.inputMode = "numeric"; price.value = saved?.price ? String(saved.price) : "";
+      price.placeholder = "e.g. 2500"; price.setAttribute("aria-label", "Your price for " + dish.name);
+      priceLabel.append(price);
+      const availableLabel = safeElement("label", "catalogue-availability-toggle");
+      const available = document.createElement("input");
+      available.type = "checkbox"; available.checked = Boolean(saved?.is_available);
+      availableLabel.append(available, safeElement("span", "", "Available today"));
+      const menuType = document.createElement("select");
+      menuType.setAttribute("aria-label", "Menu type for " + dish.name);
+      [["everyday","Everyday"],["special","Special"]].forEach(([value,label]) => {
+        const option = document.createElement("option"); option.value = value; option.textContent = label; option.selected = (saved?.menu_type || "everyday") === value; menuType.append(option);
+      });
+      const feedback = safeElement("small", "shared-dish-feedback", saved?.is_available ? "Visible to customers" : "Not listed as available");
+      const save = safeElement("button", "btn", "Save");
+      save.type = "button";
+      save.addEventListener("click", async () => {
+        const numericPrice = Number(price.value);
+        if (available.checked && (!Number.isSafeInteger(numericPrice) || numericPrice < 1)) {
+          price.focus(); feedback.textContent = "Enter a valid price before making this dish available."; return;
+        }
+        save.disabled = true; available.disabled = true;
+        feedback.textContent = "Saving…";
+        try {
+          const effectivePrice = Number.isSafeInteger(numericPrice) && numericPrice > 0 ? numericPrice : Number(saved?.price || 1500);
+          const payload = { restaurant_id: restaurant.id, dish_id: dish.id, price: effectivePrice, is_available: available.checked, menu_type: menuType.value, updated_at: new Date().toISOString() };
+          const { error } = await supabase.from("restaurant_dish_availability").upsert(payload, { onConflict: "restaurant_id,dish_id" });
+          if (error) throw error;
+          const slug = "catalog-" + dish.id + "-" + restaurant.id;
+          const menuPayload = { slug, name: dish.name, category: dish.category, price: effectivePrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
+          const { error: menuError } = await supabase.from("menu_items").upsert(menuPayload, { onConflict: "slug" });
+          if (menuError) throw menuError;
+          await loadSharedCatalogue();
+          await loadMenu();
+          feedback.textContent = available.checked ? "Saved — customers can order this dish." : "Saved — dish is not currently available.";
+        } catch (error) {
+          feedback.textContent = error.message || "Could not save availability.";
+        } finally {
+          save.disabled = false; available.disabled = false;
+        }
+      });
+      controls.append(priceLabel, menuType, availableLabel, save);
+      row.append(info, controls, feedback);
+      root.append(row);
+    });
+  }
+
+  async function loadPreorderRequests() {
+    const root = document.getElementById("restaurantPreorders");
+    if (!root || !restaurant || restaurant.status !== "approved") return;
+    const refresh = document.getElementById("refreshPreorders");
+    if (refresh) refresh.disabled = true;
+    try {
+      const { data, error } = await supabase.from("dish_preorder_requests")
+        .select("id,dish_name,quantity,requested_for,notes,delivery_area,created_at")
+        .eq("status", "pending").order("created_at", { ascending: true }).limit(100);
+      if (error) throw error;
+      root.replaceChildren();
+      if (!data?.length) {
+        root.append(safeElement("p", "empty-state", "No pending pre-order requests right now. New requests refresh automatically."));
+        return;
+      }
+      data.forEach(request => {
+        const card = safeElement("article", "restaurant-order-card preorder-request-card");
+        const head = safeElement("div", "restaurant-order-head");
+        head.append(safeElement("h3", "", request.dish_name), safeElement("span", "order-status-pill", "Open request"));
+        card.append(head, safeElement("p", "order-meta", "Quantity: " + request.quantity + " · Requested " + new Date(request.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
+        if (request.requested_for) card.append(safeElement("p", "order-meta", "Needed by: " + new Date(request.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
+        if (request.delivery_area) card.append(safeElement("p", "order-meta", "Delivery area: " + request.delivery_area));
+        if (request.notes) card.append(safeElement("p", "order-meta", "Customer note: " + request.notes));
+        const accept = safeElement("button", "btn", "Accept this request");
+        accept.type = "button";
+        accept.addEventListener("click", async () => {
+          accept.disabled = true;
+          try {
+            const { data: result, error: acceptError } = await supabase.rpc("accept_dish_preorder_request", { p_request_id: request.id });
+            if (acceptError) throw acceptError;
+            const outcome = Array.isArray(result) ? result[0] : result;
+            if (!outcome?.accepted) {
+              showNotice("Another restaurant has already accepted this request. It has been removed from the open list.", true);
+            } else {
+              showNotice("You accepted the pre-order request for " + request.dish_name + ".");
+            }
+            await loadPreorderRequests();
+          } catch (error) {
+            showNotice(error.message || "Could not accept this request.", true);
+            accept.disabled = false;
+          }
+        });
+        card.append(accept); root.append(card);
+      });
+    } catch (error) {
+      root.replaceChildren(safeElement("p", "empty-state", error.message || "Could not load pre-order requests."));
+    } finally {
+      if (refresh) refresh.disabled = false;
+    }
   }
 
   async function loadOrders() {
