@@ -107,7 +107,8 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         } else {
           showMessage("Welcome back, " + (profile.full_name || "customer") + ". Opening your customer dashboard…", false);
-          window.location.replace(new URL("dashboard.html", window.location.href).toString());
+          const nextPage = new URLSearchParams(window.location.search).get("next") === "checkout" ? "checkout.html" : "dashboard.html";
+          window.location.replace(new URL(nextPage, window.location.href).toString());
         }
       } catch (error) {
         showMessage(error.message || "We could not sign you in. Please check your details and try again.", true);
