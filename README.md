@@ -15,17 +15,17 @@ No package manager, build step, framework or server is required for the front-en
 
 Every page has its own HTML file, stylesheet and JavaScript file:
 
-| Page | HTML | Page CSS | Page JavaScript |
-| --- | --- | --- | --- |
-| Home | `index.html` | `styles/index.css` | `scripts/index.js` |
-| Menu | `foods.html` | `styles/foods.css` | `scripts/foods.js` |
-| About | `about.html` | `styles/about.css` | `scripts/about.js` |
+| Page         | HTML            | Page CSS              | Page JavaScript       |
+| ------------ | --------------- | --------------------- | --------------------- |
+| Home         | `index.html`    | `styles/index.css`    | `scripts/index.js`    |
+| Menu         | `foods.html`    | `styles/foods.css`    | `scripts/foods.js`    |
+| About        | `about.html`    | `styles/about.css`    | `scripts/about.js`    |
 | How it works | `features.html` | `styles/features.css` | `scripts/features.js` |
-| Contact | `contact.html` | `styles/contact.css` | `scripts/contact.js` |
-| FAQs | `faq.html` | `styles/faq.css` | `scripts/faq.js` |
-| Sign in | `login.html` | `styles/login.css` | `scripts/login.js` |
-| Sign up | `signup.html` | `styles/signup.css` | `scripts/signup.js` |
-| Checkout | `checkout.html` | `styles/checkout.css` | `scripts/checkout.js` |
+| Contact      | `contact.html`  | `styles/contact.css`  | `scripts/contact.js`  |
+| FAQs         | `faq.html`      | `styles/faq.css`      | `scripts/faq.js`      |
+| Sign in      | `login.html`    | `styles/login.css`    | `scripts/login.js`    |
+| Sign up      | `signup.html`   | `styles/signup.css`   | `scripts/signup.js`   |
+| Checkout     | `checkout.html` | `styles/checkout.css` | `scripts/checkout.js` |
 
 ## Shared files
 

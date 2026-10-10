@@ -1,2 +1,12 @@
 /* SIGN-IN PAGE SCRIPT: show or hide password. Authentication is not connected. */
-document.addEventListener('DOMContentLoaded',function(){var input=document.getElementById('password'),button=document.getElementById('togglePassword');if(!input||!button)return;button.addEventListener('click',function(){var show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Hide':'Show';button.setAttribute('aria-pressed',String(show))})});
+document.addEventListener("DOMContentLoaded", function () {
+  var input = document.getElementById("password"),
+    button = document.getElementById("togglePassword");
+  if (!input || !button) return;
+  button.addEventListener("click", function () {
+    var show = input.type === "password";
+    input.type = show ? "text" : "password";
+    button.textContent = show ? "Hide" : "Show";
+    button.setAttribute("aria-pressed", String(show));
+  });
+});

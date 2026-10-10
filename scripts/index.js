@@ -1,2 +1,11 @@
 /* HOME PAGE SCRIPT. Shared navigation, cart and food cards are in app.js. */
-document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('.hero-buttons a[href="#how-it-works"]').forEach(function(link){link.addEventListener('click',function(){var section=document.getElementById('how-it-works');if(section)section.setAttribute('tabindex','-1')})})});
+document.addEventListener("DOMContentLoaded", function () {
+  document
+    .querySelectorAll('.hero-buttons a[href="#how-it-works"]')
+    .forEach(function (link) {
+      link.addEventListener("click", function () {
+        var section = document.getElementById("how-it-works");
+        if (section) section.setAttribute("tabindex", "-1");
+      });
+    });
+});
