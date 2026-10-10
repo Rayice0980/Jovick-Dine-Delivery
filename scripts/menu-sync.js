@@ -1,17 +1,12 @@
 import { supabase, supabaseConfigured } from "./supabase-client.js";
 
-// Only approved businesses' live menu items are shown; there is no sample-menu fallback.
+// This narrowly scoped database function returns public menu fields only.
+// It checks restaurant approval server-side without exposing private restaurant records.
 window.addEventListener("load", async () => {
   if (!supabaseConfigured || !supabase) return;
 
   try {
-    const { data, error } = await supabase
-      .from("menu_items")
-      .select("id, name, category, price, rating, tag, menu_type, description, image_url, sort_order, restaurants!inner(status)")
-      .eq("is_available", true)
-      .not("restaurant_id", "is", null)
-      .eq("restaurants.status", "approved")
-      .order("menu_type", { ascending: true }).order("sort_order", { ascending: true });
+    const { data, error } = await supabase.rpc("get_public_available_menu");
 
     if (error) throw error;
     if (!Array.isArray(data)) throw new Error("The live menu response was invalid.");
@@ -21,7 +16,7 @@ window.addEventListener("load", async () => {
       name: item.name,
       category: item.category,
       price: Number(item.price),
-      rating: Number(item.rating).toFixed(1),
+      rating: Number(item.rating ?? 0).toFixed(1),
       tag: item.menu_type === "everyday" ? "Everyday favourite" : item.tag,
       desc: item.description,
       image: item.image_url,
