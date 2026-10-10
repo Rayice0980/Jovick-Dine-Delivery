@@ -1,12 +1,25 @@
-/* SIGN-IN PAGE SCRIPT: show or hide password. Authentication is not connected. */
+/* Sign-in page: show or hide the password and explain account-type selection. */
 document.addEventListener("DOMContentLoaded", function () {
-  var input = document.getElementById("password"),
-    button = document.getElementById("togglePassword");
-  if (!input || !button) return;
-  button.addEventListener("click", function () {
-    var show = input.type === "password";
-    input.type = show ? "text" : "password";
-    button.textContent = show ? "Hide" : "Show";
-    button.setAttribute("aria-pressed", String(show));
-  });
+  const passwordInput = document.getElementById("password");
+  const passwordToggle = document.getElementById("togglePassword");
+  const accountType = document.getElementById("accountType");
+  const form = document.getElementById("loginForm");
+  const formNote = form && form.querySelector("[data-form-note]");
+
+  if (passwordInput && passwordToggle) {
+    passwordToggle.addEventListener("click", function () {
+      const showPassword = passwordInput.type === "password";
+      passwordInput.type = showPassword ? "text" : "password";
+      passwordToggle.textContent = showPassword ? "Hide" : "Show";
+      passwordToggle.setAttribute("aria-pressed", String(showPassword));
+    });
+  }
+
+  if (accountType && formNote) {
+    accountType.addEventListener("change", function () {
+      formNote.textContent = accountType.value === "restaurant"
+        ? "Restaurant business sign-in preview. Real account verification is not connected yet."
+        : "Customer sign-in preview. Real account verification is not connected yet.";
+    });
+  }
 });
