@@ -203,7 +203,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       card.append(head);
       card.append(safeElement("p", "order-meta", "Customer: " + order.customer_name + " · " + order.customer_phone));
       card.append(safeElement("p", "order-meta", "Delivery: " + order.delivery_address + ", " + order.delivery_area));
-      if (order.requested_for) card.append(safeElement("p", "order-meta", "Requested preparation / delivery time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));\n      else card.append(safeElement("p", "order-meta", "Requested time: As soon as the business can prepare it"));\n      if (order.delivery_notes) card.append(safeElement("p", "order-meta", "Note: " + order.delivery_notes));
+      if (order.requested_for) card.append(safeElement("p", "order-meta", "Requested preparation / delivery time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
+      else card.append(safeElement("p", "order-meta", "Requested time: As soon as the business can prepare it"));
+      if (order.delivery_notes) card.append(safeElement("p", "order-meta", "Note: " + order.delivery_notes));
       const list = safeElement("ul", "restaurant-order-lines");
       lines.filter(line => line.order_id === order.id).forEach(line => {
         const li = document.createElement("li");
