@@ -111,7 +111,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       menuList.append(safeElement("p", "empty-state", "No restaurant-specific dishes yet. Use the form above to add your first menu item."));
       return;
     }
-    const everydayItems = menuItems.filter(item => item.menu_type === "everyday");
+    // Catalogue-backed everyday dishes are managed only in Daily Availability.
+    const everydayItems = menuItems.filter(item => item.menu_type === "everyday" && !(item.slug || "").startsWith("catalog-"));
     const specialItems = menuItems.filter(item => item.menu_type !== "everyday");
     function addMenuSection(title, description, items) {
       const heading = safeElement("div", "menu-section-heading");
@@ -227,6 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     sharedDishes = catalogueResult.data || [];
     ownDishAvailability = availabilityResult.data || [];
     renderSharedCatalogue();
+    renderDailyAvailability();
   }
 
   function renderSharedCatalogue() {
@@ -234,10 +236,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!root) return;
     const term = (document.getElementById("catalogueSearch")?.value || "").trim().toLowerCase();
     const category = document.getElementById("catalogueCategory")?.value || "All";
-    const filtered = sharedDishes.filter(dish => (category === "All" || dish.category === category) && (!term || (dish.name + " " + dish.category).toLowerCase().includes(term)));
+    // Once an everyday dish is saved, move it out of the shared picker.
+    const filtered = sharedDishes.filter(dish => {
+      const saved = ownDishAvailability.find(row => Number(row.dish_id) === Number(dish.id));
+      const alreadySavedEveryday = saved && saved.menu_type === "everyday";
+      return !alreadySavedEveryday
+        && (category === "All" || dish.category === category)
+        && (!term || (dish.name + " " + dish.category).toLowerCase().includes(term));
+    });
     root.replaceChildren();
     if (!filtered.length) {
-      root.append(safeElement("p", "empty-state", "No dishes match that search."));
+      root.append(safeElement("p", "empty-state", "No new dishes match that search. Your saved everyday dishes are in Daily Availability below."));
       return;
     }
     filtered.forEach(dish => {
@@ -263,37 +272,89 @@ document.addEventListener("DOMContentLoaded", async () => {
         const option = document.createElement("option"); option.value = value; option.textContent = label; option.selected = (saved?.menu_type || "everyday") === value; menuType.append(option);
       });
       const feedback = safeElement("small", "shared-dish-feedback", saved?.is_available ? "Visible to customers" : "Not listed as available");
-      const save = safeElement("button", "btn", "Save");
+      const save = safeElement("button", "btn", "Save dish");
       save.type = "button";
       save.addEventListener("click", async () => {
         const numericPrice = Number(price.value);
-        if (available.checked && (!Number.isSafeInteger(numericPrice) || numericPrice < 1)) {
-          price.focus(); feedback.textContent = "Enter a valid price before making this dish available."; return;
+        if (!Number.isSafeInteger(numericPrice) || numericPrice < 1) {
+          price.focus(); feedback.textContent = "Enter a valid price before saving this dish."; return;
         }
-        save.disabled = true; available.disabled = true;
+        save.disabled = true; available.disabled = true; menuType.disabled = true;
         feedback.textContent = "Saving…";
         try {
-          const effectivePrice = Number.isSafeInteger(numericPrice) && numericPrice > 0 ? numericPrice : Number(saved?.price || 1500);
-          const payload = { restaurant_id: restaurant.id, dish_id: dish.id, price: effectivePrice, is_available: available.checked, menu_type: menuType.value, updated_at: new Date().toISOString() };
+          const payload = { restaurant_id: restaurant.id, dish_id: dish.id, price: numericPrice, is_available: available.checked, menu_type: menuType.value, updated_at: new Date().toISOString() };
           const { error } = await supabase.from("restaurant_dish_availability").upsert(payload, { onConflict: "restaurant_id,dish_id" });
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const menuPayload = { slug, name: dish.name, category: dish.category, price: effectivePrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
+          const menuPayload = { slug, name: dish.name, category: dish.category, price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
           const { error: menuError } = await supabase.from("menu_items").upsert(menuPayload, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
           await loadMenu();
-          feedback.textContent = available.checked ? "Saved — customers can order this dish." : "Saved — dish is not currently available.";
+          showNotice(menuType.value === "everyday"
+            ? dish.name + " was saved to Daily Availability. Use its button there to mark it available or finished."
+            : dish.name + " was saved to your special menu.");
         } catch (error) {
-          feedback.textContent = error.message || "Could not save availability.";
+          feedback.textContent = error.message || "Could not save this dish.";
         } finally {
-          save.disabled = false; available.disabled = false;
+          save.disabled = false; available.disabled = false; menuType.disabled = false;
         }
       });
       available.addEventListener("change", () => save.click());
       controls.append(priceLabel, menuType, availableLabel, save);
       row.append(info, controls, feedback);
       root.append(row);
+    });
+  }
+
+  function renderDailyAvailability() {
+    const root = document.getElementById("dailyAvailabilityList");
+    if (!root) return;
+    const dailyDishes = ownDishAvailability
+      .filter(row => row.menu_type === "everyday")
+      .map(row => ({ availability: row, dish: sharedDishes.find(item => Number(item.id) === Number(row.dish_id)) }))
+      .filter(item => item.dish)
+      .sort((a, b) => a.dish.name.localeCompare(b.dish.name));
+    root.replaceChildren();
+    if (!dailyDishes.length) {
+      root.append(safeElement("p", "empty-state", "You haven't saved any everyday dishes yet. Choose a dish above and set its menu type to Everyday."));
+      return;
+    }
+    dailyDishes.forEach(({ availability, dish }) => {
+      const card = safeElement("article", "daily-availability-card" + (availability.is_available ? " is-available" : " is-finished"));
+      const details = safeElement("div", "daily-availability-details");
+      details.append(
+        safeElement("strong", "", dish.name),
+        safeElement("small", "", dish.category + " · " + money(availability.price)),
+        safeElement("span", "daily-status", availability.is_available ? "Available today" : "Finished for today")
+      );
+      const toggle = safeElement("button", "btn " + (availability.is_available ? "btn-muted" : ""), availability.is_available ? "Mark finished" : "Mark available");
+      toggle.type = "button";
+      toggle.addEventListener("click", async () => {
+        const nextAvailable = !availability.is_available;
+        toggle.disabled = true;
+        toggle.textContent = "Saving…";
+        try {
+          const { error } = await supabase.from("restaurant_dish_availability")
+            .update({ is_available: nextAvailable, updated_at: new Date().toISOString() })
+            .eq("restaurant_id", restaurant.id).eq("dish_id", dish.id);
+          if (error) throw error;
+          const slug = "catalog-" + dish.id + "-" + restaurant.id;
+          const { error: menuError } = await supabase.from("menu_items")
+            .update({ is_available: nextAvailable })
+            .eq("restaurant_id", restaurant.id).eq("slug", slug);
+          if (menuError) throw menuError;
+          await loadSharedCatalogue();
+          await loadMenu();
+          showNotice(dish.name + (nextAvailable ? " is now available to customers." : " is marked finished for today."));
+        } catch (error) {
+          showNotice(error.message || "Could not update today's availability.", true);
+          toggle.disabled = false;
+          toggle.textContent = availability.is_available ? "Mark finished" : "Mark available";
+        }
+      });
+      card.append(details, toggle);
+      root.append(card);
     });
   }
 
