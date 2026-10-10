@@ -1133,3 +1133,18 @@ p {
   .account-type-card { padding: 13px; }
   .auth-title { font-size: 31px; }
 }
+
+/* SUPABASE AUTHENTICATION FEEDBACK */
+.form-note.is-error { color: #a12828; background: #fff1f0; border-color: #f1c2bd; }
+.form-note.is-success { color: #1c5d3a; background: #eef7f0; border-color: #cfe6d5; }
+.form-note { overflow-wrap: anywhere; }
+.account-submit:disabled,
+#forgotPasswordButton:disabled,
+#signOutButton:disabled,
+#resetPasswordForm button:disabled { opacity: .65; cursor: wait; }
+#forgotPasswordButton { display: inline-block; margin-top: 10px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+#signOutButton { margin-top: 10px; }
+#resetPasswordForm[hidden] { display: none; }
+#loginForm[hidden] { display: none; }
+.reset-title { font-size: 24px; margin: 0 0 16px; }
+.field-error:empty { display: none; }
