@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ordersList.append(safeElement("p", "empty-state", "No incoming orders yet. Orders for your restaurant will appear here."));
       return;
     }
-    const availableOrders = orders.filter(order => lines.some(line => line.order_id === order.id && menuItems.some(item => String(item.id) === String(line.menu_item_id))));
+    const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => menuItems.some(item => String(item.id) === String(line.menu_item_id))); });
     document.getElementById("ordersCount").textContent = String(availableOrders.length);
     if (!availableOrders.length) {
       ordersList.append(safeElement("p", "empty-state", "No incoming orders for your menu yet."));
@@ -219,8 +219,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       footer.append(payment, safeElement("strong", "", "Total " + money(order.total)));
       const statusSelect = document.createElement("select");
       statusSelect.setAttribute("aria-label", "Update status for " + order.order_number);
-      [["received","Received"],["confirmed","Confirmed"],["preparing","Preparing"],["out_for_delivery","Out for delivery"],["delivered","Delivered"],["cancelled","Cancelled"]].forEach(([value,label]) => {
-        const option = document.createElement("option"); option.value = value; option.textContent = label; option.selected = value === order.status; statusSelect.append(option);
+      [["received","Awaiting confirmation"],["confirmed","Confirmed"],["preparing","Preparing"],["out_for_delivery","Out for delivery"],["delivered","Delivered"],["cancelled","Cancelled"]].forEach(([value,label]) => {
+        const option = document.createElement("option"); option.value = value; option.textContent = label; option.selected = value === order.status; option.disabled = value === "received"; statusSelect.append(option);
       });
       statusSelect.addEventListener("change", async () => {
         statusSelect.disabled = true;
