@@ -9,12 +9,23 @@ document.addEventListener("DOMContentLoaded", function () {
   const submitButton = form && form.querySelector('button[type="submit"]');
   const signOutButton = document.getElementById("signOutButton");
   const resetButton = document.getElementById("forgotPasswordButton");
+  const resetForm = document.getElementById("resetPasswordForm");
+  const resetNote = document.getElementById("resetPasswordNote");
+  const resetError = document.getElementById("resetPasswordError");
+  const resetMode = new URLSearchParams(window.location.search).get("reset") === "1";
 
   function showMessage(message, isError) {
     if (!formNote) return;
     formNote.textContent = message;
     formNote.classList.toggle("is-error", Boolean(isError));
     formNote.classList.toggle("is-success", !isError);
+  }
+
+  function showResetMessage(message, isError) {
+    if (!resetNote) return;
+    resetNote.textContent = message;
+    resetNote.classList.toggle("is-error", Boolean(isError));
+    resetNote.classList.toggle("is-success", !isError);
   }
 
   if (passwordInput && passwordToggle) {
@@ -26,8 +37,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  const confirmed = new URLSearchParams(window.location.search).get("confirmed");
-  if (confirmed === "1") {
+  if (resetMode && resetForm && form) {
+    form.hidden = true;
+    resetForm.hidden = false;
+    showResetMessage("Choose a new password to finish resetting your account.", false);
+  }
+
+  if (new URLSearchParams(window.location.search).get("confirmed") === "1") {
     showMessage("Email confirmation complete. You can now sign in.", false);
   }
 
@@ -126,6 +142,39 @@ document.addEventListener("DOMContentLoaded", function () {
         showMessage(error.message || "We could not request a password reset. Please try again.", true);
       } finally {
         resetButton.disabled = false;
+      }
+    });
+  }
+
+  if (resetForm) {
+    resetForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const newPassword = document.getElementById("newPassword");
+      const confirmNewPassword = document.getElementById("confirmNewPassword");
+      if (newPassword.value !== confirmNewPassword.value) {
+        if (resetError) resetError.textContent = "Your passwords do not match. Please try again.";
+        confirmNewPassword.focus();
+        return;
+      }
+      if (!supabaseConfigured || !supabase) {
+        showResetMessage("Supabase is not configured yet.", true);
+        return;
+      }
+
+      const saveButton = resetForm.querySelector('button[type="submit"]');
+      if (saveButton) saveButton.disabled = true;
+      if (resetError) resetError.textContent = "";
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword.value });
+        if (error) throw error;
+        showResetMessage("Your password has been updated. You can now sign in with your new password.", false);
+        resetForm.reset();
+        resetForm.hidden = true;
+        if (form) form.hidden = false;
+      } catch (error) {
+        showResetMessage(error.message || "We could not update your password. Open the latest reset email and try again.", true);
+      } finally {
+        if (saveButton) saveButton.disabled = false;
       }
     });
   }
