@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#236b45" />
+    <meta name="description" content="Manage your restaurant menu and incoming Jovick Dine Delivery orders." />
+    <title>Restaurant Dashboard | Jovick Dine Delivery</title>
+    <link rel="stylesheet" href="styles/restaurant-dashboard.css" />
+  </head>
+  <body data-page="restaurant-dashboard">
+    <div id="siteHeader"></div>
+    <main>
+      <section class="restaurant-hero">
+        <div class="restaurant-container hero-inner">
+          <div><span class="eyebrow">Restaurant workspace</span><h1 id="restaurantHeading">Your restaurant dashboard</h1><p>Keep your menu fresh and manage incoming customer orders in one place.</p></div>
+          <div class="hero-emoji" aria-hidden="true">🍽️</div>
+        </div>
+      </section>
+      <section class="restaurant-container restaurant-workspace">
+        <div id="restaurantNotice" class="restaurant-notice" role="status" aria-live="polite" hidden></div>
+        <div class="restaurant-summary">
+          <article><span>MENU ITEMS</span><strong id="menuCount">—</strong><small>Your restaurant's dishes</small></article>
+          <article><span>AVAILABLE</span><strong id="availableCount">—</strong><small>Visible to customers</small></article>
+          <article><span>INCOMING ORDERS</span><strong id="ordersCount">—</strong><small>Orders assigned to your menu</small></article>
+        </div>
+        <section class="restaurant-panel" id="menuManagement">
+          <div class="panel-heading"><div><span class="eyebrow">Your dishes</span><h2>Menu management</h2><p>Add new meals, update details, or pause an item when it is unavailable.</p></div><span class="panel-emoji" aria-hidden="true">🥘</span></div>
+          <form id="menuForm" class="menu-form">
+            <input type="hidden" id="menuItemId" />
+            <div class="menu-fields">
+              <label>Dish name<input id="menuName" maxlength="120" required placeholder="e.g. Special jollof rice" /></label>
+              <label>Category<select id="menuCategory" required><option value="Rice">Rice</option><option value="Swallow">Swallow</option><option value="Soups">Soups</option><option value="Grills">Grills</option><option value="Everyday">Everyday</option><option value="Sides">Sides</option></select></label>
+              <label>Price (₦)<input id="menuPrice" type="number" min="1" max="10000000" step="1" required placeholder="4500" /></label>
+              <label>Photo URL (optional)<input id="menuImage" type="url" maxlength="1000" placeholder="https://…" /></label>
+              <label class="wide-field">Description<textarea id="menuDescription" rows="2" maxlength="500" placeholder="Describe ingredients or portion size"></textarea></label>
+            </div>
+            <div class="menu-form-footer"><p id="menuFeedback" role="status" aria-live="polite"></p><div><button type="button" class="btn btn-muted" id="cancelEditButton" hidden>Cancel edit</button><button type="submit" class="btn" id="saveMenuButton">Add menu item ↗</button></div></div>
+          </form>
+          <div id="menuList" class="managed-menu-list" aria-live="polite"><p class="loading-copy">Loading your menu…</p></div>
+        </section>
+        <section class="restaurant-panel" id="incomingOrders">
+          <div class="panel-heading"><div><span class="eyebrow">Fulfilment</span><h2>Incoming orders</h2><p>Review order details and update progress for orders containing only your restaurant's dishes.</p></div><span class="panel-emoji" aria-hidden="true">🧾</span></div>
+          <div id="restaurantOrders" class="restaurant-orders" aria-live="polite"><p class="loading-copy">Loading incoming orders…</p></div>
+        </section>
+        <p class="restaurant-footnote">Customer order status updates are saved securely. Orders containing menu items from multiple restaurants are intentionally excluded until multi-restaurant order splitting is implemented.</p>
+      </section>
+    </main>
+    <div id="siteFooter"></div>
+    <script src="scripts/app.js" defer></script>
+    <script type="module" src="scripts/restaurant-dashboard.js"></script>
+  </body>
+</html>
