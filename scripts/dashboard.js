@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     container.append(loading);
     try {
       const { data: orders, error } = await supabase.from("orders")
-        .select("id, order_number, status, total, delivery_area, created_at")
+        .select("id, order_number, status, total, delivery_area, created_at, requested_for")
         .eq("customer_id", customerId).order("created_at", { ascending: false });
       if (error) throw error;
       container.replaceChildren();
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .select("order_id, item_name, quantity, line_total").in("order_id", orders.map((o) => o.id));
       if (linesError) throw linesError;
       const money = (v) => "₦" + Number(v).toLocaleString("en-NG");
-      const statusLabels = { received: "Received", confirmed: "Confirmed", preparing: "Preparing", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
+      const statusLabels = { received: "Awaiting confirmation", confirmed: "Confirmed", preparing: "Being prepared", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
       orders.forEach((order) => {
         const card = document.createElement("article"); card.className = "order-history-card";
         const header = document.createElement("div"); header.className = "order-history-header";
@@ -56,6 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const price = document.createElement("strong"); price.textContent = money(line.line_total); li.append(itemName, price); list.append(li);
         });
         card.append(list);
+        if (order.requested_for) { const schedule = document.createElement("p"); schedule.className = "order-meta"; schedule.textContent = "Requested time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); card.append(schedule); }
         const footer = document.createElement("div"); footer.className = "order-history-footer";
         const area = document.createElement("span"); area.textContent = "Delivery: " + order.delivery_area;
         const total = document.createElement("strong"); total.textContent = "Total " + money(order.total);

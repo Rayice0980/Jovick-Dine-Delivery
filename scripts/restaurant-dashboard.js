@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let menuItems = [];
 
   const money = (value) => "₦" + Number(value || 0).toLocaleString("en-NG");
-  const statusLabels = { received:"Received", confirmed:"Confirmed", preparing:"Preparing", out_for_delivery:"Out for delivery", delivered:"Delivered", cancelled:"Cancelled" };
+  const statusLabels = { received:"Awaiting confirmation", confirmed:"Confirmed", preparing:"Being prepared", out_for_delivery:"Out for delivery", delivered:"Delivered", cancelled:"Cancelled" };
 
   function showNotice(text, error = false) {
     notice.textContent = text;
@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadOrders() {
     ordersList.replaceChildren(safeElement("p", "loading-copy", "Loading incoming orders…"));
     const { data: orders, error } = await supabase.from("orders")
-      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,subtotal,delivery_fee,total,status,created_at")
+      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,subtotal,delivery_fee,total,status,created_at,requested_for")
       .order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     const orderIds = (orders || []).map(order => order.id);
@@ -203,6 +203,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       card.append(head);
       card.append(safeElement("p", "order-meta", "Customer: " + order.customer_name + " · " + order.customer_phone));
       card.append(safeElement("p", "order-meta", "Delivery: " + order.delivery_address + ", " + order.delivery_area));
+      if (order.requested_for) card.append(safeElement("p", "order-meta", "Requested preparation / delivery time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
+      else card.append(safeElement("p", "order-meta", "Requested time: As soon as the business can prepare it"));
       if (order.delivery_notes) card.append(safeElement("p", "order-meta", "Note: " + order.delivery_notes));
       const list = safeElement("ul", "restaurant-order-lines");
       lines.filter(line => line.order_id === order.id).forEach(line => {

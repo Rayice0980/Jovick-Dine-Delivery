@@ -58,15 +58,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (sessionError) throw sessionError;
     const user = sessionData.session?.user;
     if (!user) {
-      showNote("Please sign in to place an order. Your cart will stay saved on this device.", true);
-      const link = document.createElement("a"); link.className = "text-link"; link.href = "login.html?next=checkout"; link.textContent = " Sign in to continue"; note.append(link);
-      submitButton.disabled = true;
-      form.querySelectorAll("input, select, textarea, button[type=submit]").forEach((el) => { el.disabled = true; });
+      window.location.replace("login.html?next=checkout");
       return;
     }
     const [profileResult, menuResult] = await Promise.all([
       supabase.from("profiles").select("full_name, phone, account_type").eq("id", user.id).single(),
-      supabase.from("menu_items").select("id, name, price").eq("is_available", true)
+      supabase.from("menu_items").select("id, name, price, restaurants!inner(status)").eq("is_available", true).not("restaurant_id", "is", null).eq("restaurants.status", "approved")
     ]);
     if (profileResult.error) throw profileResult.error;
     if (menuResult.error) throw menuResult.error;
@@ -75,6 +72,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("checkoutPhone").value = profileResult.data.phone || "";
     document.getElementById("checkoutEmail").value = user.email || "";
     menuItems = new Map(menuResult.data.map((food) => [Number(food.id), { name: food.name, price: Number(food.price) }]));
+    const requestedFor = document.getElementById("requestedFor");
+    if (requestedFor) {
+      const minTime = new Date(Date.now() + 15 * 60 * 1000);
+      requestedFor.min = new Date(minTime.getTime() - minTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      requestedFor.max = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    }
     renderSummary(menuItems);
   } catch (error) {
     showNote(error.message || "We couldn't prepare checkout. Please refresh and try again.", true);
@@ -97,7 +100,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       p_delivery_area: String(values.get("area") || "").trim(),
       p_payment_method: String(values.get("payment") || "").trim(),
       p_delivery_notes: String(values.get("notes") || "").trim(),
-      p_items: items.map((item) => ({ id: Number(item.id), qty: Number(item.qty) }))
+      p_items: items.map((item) => ({ id: Number(item.id), qty: Number(item.qty) })),
+      p_requested_for: values.get("requestedFor") ? new Date(String(values.get("requestedFor"))).toISOString() : null
     };
     submitButton.disabled = true; submitButton.setAttribute("aria-busy", "true");
     showNote("Submitting your order securely…");
@@ -113,9 +117,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const heading = document.createElement("h3"); heading.textContent = "Your order has been received!";
       const number = document.createElement("p"); number.textContent = "Order number: " + order.order_number;
       const amount = document.createElement("p"); amount.textContent = "Order total: " + money(order.total);
-      const status = document.createElement("p"); status.textContent = "Status: Received. Payment has not been processed.";
+      const status = document.createElement("p"); status.textContent = "Status: Awaiting business confirmation. Payment has not been processed.";
+      const requestedFor = values.get("requestedFor");
+      const schedule = requestedFor ? document.createElement("p") : null;
+      if (schedule) schedule.textContent = "Requested time: " + new Date(String(requestedFor)).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
       const link = document.createElement("a"); link.className = "btn"; link.href = "dashboard.html#orders"; link.textContent = "View my orders";
-      success.append(heading, number, amount, status, link); summary.replaceChildren(success);
+      success.append(heading, number, amount, status);
+      if (schedule) success.append(schedule);
+      success.append(link); summary.replaceChildren(success);
       showNote("Order saved successfully. You can view it from your customer dashboard.");
     } catch (error) {
       showNote(error.message || "We couldn't place your order. Your cart is still saved; please try again.", true);

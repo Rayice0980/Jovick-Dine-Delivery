@@ -1,106 +1,6 @@
-const FOOD = [
-  {
-    id: 1,
-    name: "Jollof Rice & Grilled Chicken",
-    category: "Rice",
-    price: 6500,
-    rating: "4.9",
-    tag: "Customer favourite",
-    desc: "Smoky party-style jollof, juicy grilled chicken and plantain.",
-    image:
-      "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 2,
-    name: "Egusi & Pounded Yam",
-    category: "Swallow",
-    price: 5500,
-    rating: "4.8",
-    tag: "Local classic",
-    desc: "Rich melon-seed soup with assorted meat and soft pounded yam.",
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 3,
-    name: "Suya Beef Bowl",
-    category: "Grills",
-    price: 4800,
-    rating: "4.8",
-    tag: "Spicy & smoky",
-    desc: "Char-grilled beef suya, onions, fresh tomatoes and pepper sauce.",
-    image:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 4,
-    name: "Ofada Rice & Ayamase",
-    category: "Rice",
-    price: 6200,
-    rating: "4.9",
-    tag: "House special",
-    desc: "Local ofada rice with bold green pepper sauce and assorted meat.",
-    image:
-      "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 5,
-    name: "Peppered Chicken Wings",
-    category: "Grills",
-    price: 5200,
-    rating: "4.7",
-    tag: "Crowd pleaser",
-    desc: "Crispy wings tossed in a sweet, savoury Nigerian pepper glaze.",
-    image:
-      "https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 6,
-    name: "Beans & Fried Plantain",
-    category: "Everyday",
-    price: 3200,
-    rating: "4.7",
-    tag: "Comfort food",
-    desc: "Slow-cooked beans served with golden ripe plantain.",
-    image:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 7,
-    name: "Yam & Egg Sauce",
-    category: "Everyday",
-    price: 2800,
-    rating: "4.6",
-    tag: "Breakfast pick",
-    desc: "Soft boiled yam with fresh tomato, pepper and egg sauce.",
-    image:
-      "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 8,
-    name: "Catfish Pepper Soup",
-    category: "Soups",
-    price: 7000,
-    rating: "4.8",
-    tag: "Weekend favourite",
-    desc: "Fragrant, warming pepper soup with fresh catfish and herbs.",
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 9,
-    name: "Puff-Puff (6 pieces)",
-    category: "Sides",
-    price: 1500,
-    rating: "4.6",
-    tag: "Sweet treat",
-    desc: "Freshly fried golden puff-puff, light on the inside.",
-    image:
-      "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=900&q=85",
-  },
-];
+const FOOD = [];
 const money = (n) => "₦" + Number(n).toLocaleString("en-NG");
-let cart = JSON.parse(localStorage.getItem("jovick-cart") || "[]"),
+let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); return Array.isArray(saved) ? saved.filter((item) => FOOD.some((food) => food.id === item.id)) : []; } catch { return []; } })(),
   activeCategory = "All",
   searchTerm = "";
 const page = document.body.dataset.page || "home";
@@ -128,7 +28,7 @@ function header() {
       .join("") +
     '<a href="faq.html">FAQs</a></nav><div class="nav-actions"><button class="cart-btn" data-cart-open aria-label="Open shopping cart">Bag <span class="cart-count" id="cartCount">' +
     cart.reduce((s, i) => s + i.qty, 0) +
-    '</span></button><a class="profile-btn" href="dashboard.html" aria-label="Open your customer profile" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--ink)"><span aria-hidden="true">♙</span><span>Profile</span></a><a class="btn" href="foods.html">Order food ↗</a><button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div></header>'
+    '</span></button><a class="profile-btn" href="login.html" data-profile-link aria-label="Open your account" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--ink)"><span aria-hidden="true">♙</span><span>Profile</span></a><a class="btn" href="foods.html">Order food ↗</a><button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div></header>'
   );
 }
 function footer() {
@@ -177,7 +77,7 @@ function renderFoodGrid(target, limit) {
   if (limit) items = items.slice(0, limit);
   el.innerHTML = items.length
     ? items.map(foodCard).join("")
-    : "<p>No dishes found. Try another search or category.</p>";
+    : "<div class=\"menu-empty-state\"><h3>No dishes available yet</h3><p>Approved food businesses will publish their menus here. Please check back soon.</p></div>";
 }
 function persist() {
   localStorage.setItem("jovick-cart", JSON.stringify(cart));
@@ -203,6 +103,7 @@ function addToCart(id) {
   persist();
   toast(f.name + " added to your bag");
 }
+window.jovickAddToCartAuthorized = addToCart;
 function changeQty(id, d) {
   const i = cart.find((x) => x.id === id);
   if (!i) return;
@@ -214,10 +115,8 @@ function renderCart() {
   const el = document.getElementById("cartContents");
   if (!el) return;
   const count = cart.reduce((s, i) => s + i.qty, 0);
-  const subtotal = cart.reduce(
-    (s, i) => s + i.qty * FOOD.find((f) => f.id === i.id).price,
-    0,
-  );
+  cart = cart.filter((item) => FOOD.some((food) => food.id === item.id));
+  const subtotal = cart.reduce((s, item) => { const food = FOOD.find((entry) => entry.id === item.id); return s + (food ? item.qty * food.price : 0); }, 0);
   document.getElementById("cartCountHeading").textContent = count
     ? "(" + count + ")"
     : "";
@@ -317,7 +216,7 @@ function boot() {
     setTimeout(openCart, 250);
 }
 window.jovickSetMenu = function (items) {
-  if (!Array.isArray(items) || !items.length) return;
+  if (!Array.isArray(items)) return;
   FOOD.splice(0, FOOD.length, ...items);
   cart = cart.filter((item) => FOOD.some((food) => food.id === item.id));
   persist();
