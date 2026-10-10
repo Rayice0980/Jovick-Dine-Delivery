@@ -103,6 +103,7 @@ function addToCart(id) {
   persist();
   toast(f.name + " added to your bag");
 }
+window.jovickAddToCartAuthorized = addToCart;
 function changeQty(id, d) {
   const i = cart.find((x) => x.id === id);
   if (!i) return;
