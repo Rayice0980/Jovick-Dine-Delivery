@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           showMessage("Welcome back, " + (profile.full_name || "customer") + ". Opening your customer dashboard…", false);
           const requestedNext = new URLSearchParams(window.location.search).get("next");
-          const nextPage = requestedNext === "checkout" ? "checkout.html" : requestedNext === "admin" ? "admin-dashboard.html" : "dashboard.html";
+          const nextPage = requestedNext === "checkout" ? "checkout.html" : requestedNext === "menu" ? "foods.html" : requestedNext === "admin" ? "admin-dashboard.html" : "dashboard.html";
           window.location.replace(new URL(nextPage, window.location.href).toString());
         }
       } catch (error) {
