@@ -56,7 +56,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           const price = document.createElement("strong"); price.textContent = money(line.line_total); li.append(itemName, price); list.append(li);
         });
         card.append(list);
-        if (order.requested_for) { const schedule = document.createElement("p"); schedule.className = "order-meta"; schedule.textContent = "Requested time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); card.append(schedule); }\n        const footer = document.createElement("div"); footer.className = "order-history-footer";
+        if (order.requested_for) { const schedule = document.createElement("p"); schedule.className = "order-meta"; schedule.textContent = "Requested time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); card.append(schedule); }
+        const footer = document.createElement("div"); footer.className = "order-history-footer";
         const area = document.createElement("span"); area.textContent = "Delivery: " + order.delivery_area;
         const total = document.createElement("strong"); total.textContent = "Total " + money(order.total);
         footer.append(area, total); card.append(footer); container.append(card);
