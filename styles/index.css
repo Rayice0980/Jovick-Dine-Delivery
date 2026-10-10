@@ -828,6 +828,51 @@ p {
     grid-template-columns: repeat(5, 1fr);
   }
 }
+/* Tablet header layout: keep the brand and actions on one row, navigation on the next. */
+@media (min-width: 701px) and (max-width: 900px) {
+  .nav {
+    height: auto;
+    min-height: 78px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 18px;
+    row-gap: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .nav .brand {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    font-size: 19px;
+  }
+  .nav .nav-actions {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .nav .nav-links {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 22px;
+    padding-top: 12px;
+    min-width: 0;
+  }
+  .nav .nav-links a {
+    white-space: nowrap;
+  }
+  .nav .profile-btn {
+    padding: 9px 11px;
+  }
+  .nav .nav-actions > .btn {
+    padding: 11px 15px;
+    white-space: nowrap;
+  }
+}
 @media (max-width: 700px) {
   .container {
     width: min(100% - 30px, 560px);
