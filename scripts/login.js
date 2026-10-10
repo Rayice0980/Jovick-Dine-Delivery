@@ -106,7 +106,8 @@ document.addEventListener("DOMContentLoaded", function () {
             showMessage("Welcome back, " + (profile.full_name || restaurant.name) + ". Your restaurant account is approved. Your dashboard is the next feature to build.", false);
           }
         } else {
-          showMessage("Welcome back, " + (profile.full_name || "customer") + ". You are signed in securely. Your customer dashboard is the next feature to build.", false);
+          showMessage("Welcome back, " + (profile.full_name || "customer") + ". Opening your customer dashboard…", false);
+          window.location.assign("dashboard.html");
         }
       } catch (error) {
         showMessage(error.message || "We could not sign you in. Please check your details and try again.", true);
