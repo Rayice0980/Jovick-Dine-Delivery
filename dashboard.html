@@ -64,7 +64,7 @@
               <article class="overview-card order-count-card">
                 <div class="overview-card-icon orange-icon">🧾</div>
                 <span class="card-label">ORDER HISTORY</span>
-                <strong class="big-number">—</strong>
+                <strong class="big-number" id="orderCount">0</strong>
                 <p>Order history will be available when live ordering is connected.</p>
               </article>
             </div>
@@ -109,12 +109,13 @@
               </div>
               <div class="panel-icon">▤</div>
             </div>
-            <div class="orders-empty">
-              <div class="empty-illustration" aria-hidden="true">🥡</div>
-              <h3>Your table is waiting</h3>
-              <p>You haven’t placed any orders through the live ordering system yet.</p>
-              <a class="btn" href="foods.html">Explore the menu <span>↗</span></a>
-              <small>Note: checkout is still a demo and does not submit real orders or payments.</small>
+            <div id="ordersList" class="orders-list" aria-live="polite">
+              <div class="orders-empty">
+                <div class="empty-illustration" aria-hidden="true">🥡</div>
+                <h3>Your table is waiting</h3>
+                <p>Your submitted orders will appear here.</p>
+                <a class="btn" href="foods.html">Explore the menu <span>↗</span></a>
+              </div>
             </div>
           </section>
         </div>
