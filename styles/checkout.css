@@ -1,0 +1,2 @@
+/* CHECKOUT PAGE ONLY. Shared components are in site.css. */
+#checkoutSummary .cart-item{padding:14px 0;border-bottom:1px solid var(--line)}#checkoutSummary .cart-item small{display:block;color:var(--muted);margin-top:5px}#checkoutSummary .cart-total{margin-top:16px}form .form-note{line-height:1.6}@media(max-width:760px){.page-content .split{gap:24px}}
