@@ -25,6 +25,15 @@
           <article><span>AVAILABLE</span><strong id="availableCount">—</strong><small>Visible to customers</small></article>
           <article><span>INCOMING ORDERS</span><strong id="ordersCount">—</strong><small>Orders assigned to your menu</small></article>
         </div>
+        <section class="restaurant-panel" id="sharedCatalogue">
+          <div class="panel-heading"><div><span class="eyebrow">Shared catalogue</span><h2>Today’s food availability</h2><p>Browse the full Jovick dish list, set your price, and tick every dish you can prepare today. Untick dishes that are sold out.</p></div><span class="panel-emoji" aria-hidden="true">☑️</span></div>
+          <div class="catalogue-tools"><input id="catalogueSearch" type="search" placeholder="Search all dishes…" aria-label="Search shared food catalogue" /><select id="catalogueCategory" aria-label="Filter dishes by category"><option value="All">All categories</option><option>Rice</option><option>Everyday</option><option>Pasta</option><option>Noodles</option><option>Swallow</option><option>Soups</option><option>Proteins</option><option>Grills</option><option>Snacks</option><option>Sides</option></select></div>
+          <div id="sharedDishCatalogue" class="shared-dish-catalogue" aria-live="polite"><p class="loading-copy">Loading shared dish catalogue…</p></div>
+        </section>
+        <section class="restaurant-panel" id="preorderRequests">
+          <div class="panel-heading"><div><span class="eyebrow">Customer requests</span><h2>Pre-order requests</h2><p>All approved restaurants can see each request. The first restaurant to accept it secures the request; other restaurants cannot accept it afterward.</p></div><button type="button" class="btn btn-muted" id="refreshPreorders">Refresh requests ↻</button></div>
+          <div id="restaurantPreorders" class="restaurant-orders" aria-live="polite"><p class="loading-copy">Checking pre-order requests…</p></div>
+        </section>
         <section class="restaurant-panel" id="menuManagement">
           <div class="panel-heading"><div><span class="eyebrow">Your dishes</span><h2>Menu management</h2><p>Keep everyday meals listed, add special dishes, and remove items you no longer sell.</p></div><span class="panel-emoji" aria-hidden="true">🥘</span></div>
           <form id="menuForm" class="menu-form">
