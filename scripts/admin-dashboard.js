@@ -108,9 +108,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         actions.append(element("span", "application-status " + item.status, statusLabels[item.status] || item.status));
       }
+      const remove = element("button", "button button-delete", "Delete business");
+      remove.type = "button";
+      remove.addEventListener("click", () => deleteBusiness(item, remove, actions));
+      actions.append(remove);
       card.append(actions);
       list.append(card);
     });
+  }
+
+  async function deleteBusiness(item, clickedButton, actionContainer) {
+    const businessName = item.business_name || "this business";
+    const confirmed = window.confirm(
+      "Permanently delete " + businessName + "? This removes the business and its menu items. Existing order history is kept, but its menu-item links are removed. This cannot be undone."
+    );
+    if (!confirmed) return;
+    actionContainer.querySelectorAll("button").forEach(button => { button.disabled = true; });
+    clickedButton.textContent = "Deleting…";
+    showNotice("");
+    try {
+      const { error } = await supabase.rpc("admin_delete_restaurant", {
+        p_restaurant_id: item.id
+      });
+      if (error) throw error;
+      showNotice(businessName + " has been deleted from management.", "success");
+      await loadApplications();
+    } catch (error) {
+      showNotice(error.message || "The business could not be deleted. Refresh and try again.", "error");
+      actionContainer.querySelectorAll("button").forEach(button => { button.disabled = false; });
+      clickedButton.textContent = "Delete business";
+    }
   }
 
   async function reviewApplication(item, decision, clickedButton, actionContainer) {
