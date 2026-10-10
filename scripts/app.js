@@ -1,5 +1,5 @@
 const FOOD = [];
-const moneyy = (n) => "₦" + Number(n).toLocaleString("en-NG");
+const money = (n) => "₦" + Number(n).toLocaleString("en-NG");
 let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); return Array.isArray(saved) ? saved.filter((item) => FOOD.some((food) => food.id === item.id)) : []; } catch { return []; } })(),
   activeCategory = "All",
   searchTerm = "";
@@ -28,7 +28,7 @@ function header() {
       .join("") +
     '<a href="faq.html">FAQs</a></nav><div class="nav-actions"><button class="cart-btn" data-cart-open aria-label="Open shopping cart">Bag <span class="cart-count" id="cartCount">' +
     cart.reduce((s, i) => s + i.qty, 0) +
-    '</span></button><a class="profile-btn" href="dashboard.html" aria-label="Open your customer profile" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--ink)"><span aria-hidden="true">♙</span><span>Profile</span></a><a class="btn" href="foods.html">Order food ↗</a><button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div></header>'
+    '</span></button><a class="profile-btn" href="login.html" data-profile-link aria-label="Open your account" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--ink)"><span aria-hidden="true">♙</span><span>Profile</span></a><a class="btn" href="foods.html">Order food ↗</a><button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div></header>'
   );
 }
 function footer() {
