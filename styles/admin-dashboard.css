@@ -294,6 +294,14 @@ p {
 .button-reject:hover {
   background: var(--red-bg);
 }
+.button-delete {
+  background: #fff;
+  color: var(--red);
+  border-color: #e7c5c3;
+}
+.button-delete:hover {
+  background: var(--red-bg);
+}
 .loading-state,
 .empty-state {
   padding: 28px 14px;
@@ -381,6 +389,7 @@ p {
   }
   .application-actions {
     flex-direction: row;
+    flex-wrap: wrap;
     min-width: 0;
   }
   .application-actions .button {
