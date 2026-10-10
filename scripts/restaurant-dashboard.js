@@ -125,18 +125,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveMenuButton.textContent = "Save menu changes ↗";
         cancelEditButton.hidden = false;
         setMenuFeedback("Editing " + item.name);
-        menuForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        menuForm.scrollIntoView({ behavior: "auto", block: "start" });
       });
       const toggle = safeElement("button", "", item.is_available ? "Pause item" : "Make available");
       toggle.type = "button";
       toggle.addEventListener("click", async () => {
+        const previousAvailability = item.is_available;
+        const nextAvailability = !previousAvailability;
+
+        // Update the card immediately so the interface feels responsive.
+        item.is_available = nextAvailability;
+        status.textContent = nextAvailability ? "Available" : "Paused";
+        status.classList.toggle("off", !nextAvailability);
+        toggle.textContent = nextAvailability ? "Pause item" : "Make available";
         toggle.disabled = true;
+        document.getElementById("availableCount").textContent = String(menuItems.filter(menuItem => menuItem.is_available).length);
+
         try {
-          const { error } = await supabase.from("menu_items").update({ is_available: !item.is_available }).eq("id", item.id).eq("restaurant_id", restaurant.id);
+          const { error } = await supabase.from("menu_items")
+            .update({ is_available: nextAvailability })
+            .eq("id", item.id)
+            .eq("restaurant_id", restaurant.id);
           if (error) throw error;
-          await loadMenu();
+          setMenuFeedback(item.name + (nextAvailability ? " is now available." : " is now paused."));
         } catch (error) {
+          // Revert the optimistic update if the server rejects the change.
+          item.is_available = previousAvailability;
+          status.textContent = previousAvailability ? "Available" : "Paused";
+          status.classList.toggle("off", !previousAvailability);
+          toggle.textContent = previousAvailability ? "Pause item" : "Make available";
+          document.getElementById("availableCount").textContent = String(menuItems.filter(menuItem => menuItem.is_available).length);
           showNotice(error.message || "Could not update item availability.", true);
+        } finally {
           toggle.disabled = false;
         }
       });
