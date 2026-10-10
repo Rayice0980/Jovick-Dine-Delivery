@@ -103,7 +103,8 @@ document.addEventListener("DOMContentLoaded", function () {
           if (!restaurant || restaurant.status !== "approved") {
             showMessage("You are signed in, but your restaurant account is pending business review. Restaurant management access will be enabled after approval.", false);
           } else {
-            showMessage("Welcome back, " + (profile.full_name || restaurant.name) + ". Your restaurant account is approved. Your dashboard is the next feature to build.", false);
+            showMessage("Welcome back, " + (profile.full_name || restaurant.name) + ". Opening your restaurant dashboard…", false);
+            window.location.replace(new URL("restaurant-dashboard.html", window.location.href).toString());
           }
         } else {
           showMessage("Welcome back, " + (profile.full_name || "customer") + ". Opening your customer dashboard…", false);
