@@ -316,4 +316,12 @@ function boot() {
   if (new URLSearchParams(location.search).get("checkout") === "1")
     setTimeout(openCart, 250);
 }
+window.jovickSetMenu = function (items) {
+  if (!Array.isArray(items) || !items.length) return;
+  FOOD.splice(0, FOOD.length, ...items);
+  cart = cart.filter((item) => FOOD.some((food) => food.id === item.id));
+  persist();
+  renderFoodGrid("foodGrid", document.body.dataset.page === "home" ? 6 : null);
+};
+
 document.addEventListener("DOMContentLoaded", boot);
