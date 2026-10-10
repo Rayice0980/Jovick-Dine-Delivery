@@ -29,7 +29,7 @@ Every page has its own HTML file, stylesheet and JavaScript file:
 
 ## Shared files
 
-- `styles/site.css` — shared visual system, responsive layout, navigation, footer, menu cards and cart styling.
+- `styles/site.css` — retained as the original shared style reference; individual pages no longer depend on it.
 - `scripts/app.js` — shared navigation/footer rendering, menu data, category filtering, shopping bag, and demo form feedback.
 
 Each HTML page loads the shared files and its own page-specific CSS and JavaScript. Change the page-specific files for one page; change the shared files when you want a site-wide update. Comments at the top of the page files explain their purpose.
