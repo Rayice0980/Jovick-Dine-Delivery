@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let menuItems = [];
   let sharedDishes = [];
   let ownDishAvailability = [];
+  let knownPreorderIds = null;
 
   const money = (value) => "₦" + Number(value || 0).toLocaleString("en-NG");
   const statusLabels = { received:"Awaiting confirmation", confirmed:"Confirmed", preparing:"Being prepared", out_for_delivery:"Out for delivery", delivered:"Delivered", cancelled:"Cancelled" };
@@ -296,6 +297,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         .select("id,dish_name,quantity,requested_for,notes,delivery_area,created_at")
         .eq("status", "pending").order("created_at", { ascending: true }).limit(100);
       if (error) throw error;
+      const currentIds = new Set((data || []).map(request => request.id));
+      if (knownPreorderIds) {
+        const incoming = (data || []).filter(request => !knownPreorderIds.has(request.id));
+        if (incoming.length) showNotice("New pre-order request" + (incoming.length > 1 ? "s" : "") + " received: " + incoming.map(request => request.dish_name).join(", ") + ". Review the pre-order inbox.");
+      }
+      knownPreorderIds = currentIds;
       root.replaceChildren();
       if (!data?.length) {
         root.append(safeElement("p", "empty-state", "No pending pre-order requests right now. New requests refresh automatically."));
