@@ -83,7 +83,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    await Promise.all([loadMenu(), loadOrders()]);
+    await loadMenu();
+    await loadOrders();
   } catch (error) {
     showNotice(error.message || "We couldn't load your restaurant workspace. Please refresh and try again.", true);
   }
