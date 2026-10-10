@@ -30,6 +30,10 @@
           <div class="catalogue-tools"><input id="catalogueSearch" type="search" placeholder="Search all dishes…" aria-label="Search shared food catalogue" /><select id="catalogueCategory" aria-label="Filter dishes by category"><option value="All">All categories</option><option>Rice</option><option>Everyday</option><option>Pasta</option><option>Noodles</option><option>Swallow</option><option>Soups</option><option>Proteins</option><option>Grills</option><option>Snacks</option><option>Sides</option></select></div>
           <div id="sharedDishCatalogue" class="shared-dish-catalogue" aria-live="polite"><p class="loading-copy">Loading shared dish catalogue…</p></div>
         </section>
+        <section class="restaurant-panel" id="dailyAvailability">
+          <div class="panel-heading"><div><span class="eyebrow">Your saved everyday dishes</span><h2>Daily Availability</h2><p>Your saved everyday dishes live here. Tap once to mark a dish available or finished; your saved price stays the same.</p></div><span class="panel-emoji" aria-hidden="true">🟢</span></div>
+          <div id="dailyAvailabilityList" class="daily-availability-list" aria-live="polite"><p class="loading-copy">Loading your everyday dishes…</p></div>
+        </section>
         <section class="restaurant-panel" id="preorderRequests">
           <div class="panel-heading"><div><span class="eyebrow">Customer requests</span><h2>Pre-order requests</h2><p>All approved restaurants can see each request. The first restaurant to accept it secures the request; other restaurants cannot accept it afterward.</p></div><button type="button" class="btn btn-muted" id="refreshPreorders">Refresh requests ↻</button></div>
           <div id="restaurantPreorders" class="restaurant-orders" aria-live="polite"><p class="loading-copy">Checking pre-order requests…</p></div>
