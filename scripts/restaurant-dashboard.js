@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function loadMenu() {
     const { data, error } = await supabase.from("menu_items")
-      .select("id,slug,name,category,price,description,image_url,is_available,tag")
+      .select("id,slug,name,category,price,description,image_url,is_available,tag,menu_type")
       .eq("restaurant_id", restaurant.id).order("sort_order", { ascending: true }).order("name");
     if (error) throw error;
     menuItems = data || [];
@@ -102,11 +102,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       menuList.append(safeElement("p", "empty-state", "No restaurant-specific dishes yet. Use the form above to add your first menu item."));
       return;
     }
-    menuItems.forEach(item => {
+    const everydayItems = menuItems.filter(item => item.menu_type === "everyday");
+    const specialItems = menuItems.filter(item => item.menu_type !== "everyday");
+    function addMenuSection(title, description, items) {
+      const heading = safeElement("div", "menu-section-heading");
+      heading.append(safeElement("h3", "", title), safeElement("p", "", description));
+      menuList.append(heading);
+      if (!items.length) {
+        menuList.append(safeElement("p", "menu-section-empty", "No dishes in this section yet."));
+        return;
+      }
+      items.forEach(item => {
       const card = safeElement("article", "managed-menu-card");
       const top = safeElement("div", "managed-menu-top");
       const copy = document.createElement("div");
-      copy.append(safeElement("span", "menu-category-label", item.category));
+      copy.append(safeElement("span", "menu-category-label", (item.menu_type === "everyday" ? "Everyday menu" : "Special menu") + " · " + item.category));
       copy.append(safeElement("h3", "", item.name));
       copy.append(safeElement("p", "", item.description || "No description added."));
       top.append(copy, safeElement("strong", "menu-price", money(item.price)));
@@ -119,6 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("menuItemId").value = String(item.id);
         document.getElementById("menuName").value = item.name;
         document.getElementById("menuCategory").value = item.category;
+        document.getElementById("menuType").value = item.menu_type || "special";
         document.getElementById("menuPrice").value = String(item.price);
         document.getElementById("menuImage").value = item.image_url || "";
         document.getElementById("menuDescription").value = item.description || "";
@@ -160,11 +171,31 @@ document.addEventListener("DOMContentLoaded", async () => {
           toggle.disabled = false;
         }
       });
-      buttons.append(edit, toggle);
+      const remove = safeElement("button", "menu-delete-button", "Delete dish");
+      remove.type = "button";
+      remove.addEventListener("click", async () => {
+        if (!window.confirm("Delete “" + item.name + "” from your menu? This cannot be undone.")) return;
+        remove.disabled = true;
+        try {
+          const { error } = await supabase.from("menu_items").delete()
+            .eq("id", item.id).eq("restaurant_id", restaurant.id);
+          if (error) throw error;
+          if (document.getElementById("menuItemId").value === String(item.id)) resetMenuForm();
+          setMenuFeedback(item.name + " was deleted from your menu.");
+          await loadMenu();
+        } catch (error) {
+          showNotice(error.message || "Could not delete this dish.", true);
+          remove.disabled = false;
+        }
+      });
+      buttons.append(edit, toggle, remove);
       actions.append(status, buttons);
       card.append(top, actions);
       menuList.append(card);
-    });
+      });
+    }
+    addMenuSection("Everyday menu", "Your regular dishes customers can order whenever they are available.", everydayItems);
+    addMenuSection("Special menu", "Extra dishes you add for selected days or occasions.", specialItems);
   }
 
   async function loadOrders() {
@@ -245,6 +276,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!restaurant || restaurant.status !== "approved") return;
     const name = document.getElementById("menuName").value.trim();
     const category = document.getElementById("menuCategory").value;
+    const menu_type = document.getElementById("menuType").value;
     const price = Number(document.getElementById("menuPrice").value);
     const description = document.getElementById("menuDescription").value.trim();
     const image_url = document.getElementById("menuImage").value.trim();
@@ -256,7 +288,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     saveMenuButton.disabled = true;
     setMenuFeedback(editingId ? "Saving menu changes…" : "Adding menu item…");
     try {
-      const payload = { name, category, price, description, image_url, restaurant_id: restaurant.id };
+      const payload = { name, category, menu_type, price, description, image_url, restaurant_id: restaurant.id };
       if (editingId) {
         const { error } = await supabase.from("menu_items").update(payload).eq("id", Number(editingId)).eq("restaurant_id", restaurant.id);
         if (error) throw error;

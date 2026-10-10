@@ -7,11 +7,11 @@ window.addEventListener("load", async () => {
   try {
     const { data, error } = await supabase
       .from("menu_items")
-      .select("id, name, category, price, rating, tag, description, image_url, sort_order, restaurants!inner(status)")
+      .select("id, name, category, price, rating, tag, menu_type, description, image_url, sort_order, restaurants!inner(status)")
       .eq("is_available", true)
       .not("restaurant_id", "is", null)
       .eq("restaurants.status", "approved")
-      .order("sort_order", { ascending: true });
+      .order("menu_type", { ascending: true }).order("sort_order", { ascending: true });
 
     if (error) throw error;
     if (!Array.isArray(data)) throw new Error("The live menu response was invalid.");
@@ -22,7 +22,7 @@ window.addEventListener("load", async () => {
       category: item.category,
       price: Number(item.price),
       rating: Number(item.rating).toFixed(1),
-      tag: item.tag,
+      tag: item.menu_type === "everyday" ? "Everyday favourite" : item.tag,
       desc: item.description,
       image: item.image_url,
     }));
