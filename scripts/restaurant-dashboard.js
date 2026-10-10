@@ -410,25 +410,48 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (request.requested_for) card.append(safeElement("p", "order-meta", "Needed by: " + new Date(request.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
         if (request.delivery_area) card.append(safeElement("p", "order-meta", "Delivery area: " + request.delivery_area));
         if (request.notes) card.append(safeElement("p", "order-meta", "Customer note: " + request.notes));
-        const accept = safeElement("button", "btn", "Accept this request");
+        const priceLabel = safeElement("label", "preorder-accept-price", "Your price per item (₦)");
+        const priceInput = document.createElement("input");
+        priceInput.type = "number";
+        priceInput.min = "1";
+        priceInput.max = "10000000";
+        priceInput.step = "1";
+        priceInput.inputMode = "numeric";
+        priceInput.required = true;
+        priceInput.placeholder = "Enter your price";
+        priceInput.setAttribute("aria-label", "Your price per item for " + request.dish_name);
+        priceLabel.append(priceInput);
+        const accept = safeElement("button", "btn", "Accept and set price");
         accept.type = "button";
         accept.addEventListener("click", async () => {
+          const price = Number(priceInput.value);
+          if (!Number.isSafeInteger(price) || price < 1 || price > 10000000) {
+            priceInput.focus();
+            showNotice("Enter a valid price before accepting this pre-order.", true);
+            return;
+          }
           accept.disabled = true;
+          priceInput.disabled = true;
           try {
-            const { data: result, error: acceptError } = await supabase.rpc("accept_dish_preorder_request", { p_request_id: request.id });
+            const { data: result, error: acceptError } = await supabase.rpc("accept_dish_preorder_request", {
+              p_request_id: request.id,
+              p_price: price
+            });
             if (acceptError) throw acceptError;
             const outcome = Array.isArray(result) ? result[0] : result;
             if (!outcome?.accepted) {
               showNotice("Another restaurant has already accepted this request. It has been removed from the open list.", true);
             } else {
-              showNotice("You accepted the pre-order request for " + request.dish_name + ".");
+              showNotice("You accepted " + request.dish_name + " at " + money(price) + ". The customer can now add it to their bag and check out.");
             }
             await loadPreorderRequests();
           } catch (error) {
             showNotice(error.message || "Could not accept this request.", true);
             accept.disabled = false;
+            priceInput.disabled = false;
           }
         });
+        card.append(priceLabel);
         card.append(accept); root.append(card);
       });
     } catch (error) {
