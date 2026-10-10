@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#173f2b" />
+  <meta name="description" content="Secure administrator sign-in for Jovick Dine Delivery management." />
+  <title>Management Login | Jovick Dine Delivery</title>
+  <link rel="stylesheet" href="styles/admin-dashboard.css" />
+  <style>
+    .admin-login-wrap{max-width:480px;margin:64px auto;padding:0 20px}
+    .admin-login-card{background:#fff;border:1px solid #e2e8e3;border-radius:18px;padding:30px;box-shadow:0 12px 36px rgba(20,50,30,.08)}
+    .admin-login-card h1{margin:8px 0 10px;font-size:clamp(1.8rem,5vw,2.3rem)}
+    .admin-login-card p{line-height:1.6;color:#58665d}
+    .admin-login-card label{display:block;font-weight:600;margin:18px 0 7px}
+    .admin-login-card input{width:100%;padding:13px 14px;border:1px solid #cbd5ce;border-radius:9px;font:inherit;box-sizing:border-box}
+    .admin-login-card .button{width:100%;margin-top:20px;justify-content:center}
+    .admin-login-note{padding:12px;border-radius:8px;background:#f2f5f2;margin-top:16px}
+    .admin-login-note.is-error{background:#fff0ef;color:#9b2620}
+    .admin-login-note.is-success{background:#edf8ef;color:#1f6338}
+    .admin-login-links{margin-top:20px;text-align:center}
+    .admin-login-links a{color:#236b45}
+    .admin-login-brand{display:block;text-decoration:none;color:inherit;margin-bottom:22px;font-weight:700}
+    .admin-login-brand small{display:block;font-size:.7rem;letter-spacing:.12em;margin-top:5px}
+  </style>
+</head>
+<body>
+  <header class="admin-topbar">
+    <a class="admin-brand" href="index.html"><span class="brand-mark">J</span><span>Jovick Dine Delivery<small>MANAGEMENT</small></span></a>
+  </header>
+  <main class="admin-login-wrap">
+    <section class="admin-login-card">
+      <p class="eyebrow">RESTRICTED ACCESS</p>
+      <h1>Management sign in</h1>
+      <p>Sign in here to manage restaurant applications. This is separate from customer and restaurant business sign-in.</p>
+      <form id="adminLoginForm">
+        <label for="adminEmail">Administrator email</label>
+        <input id="adminEmail" name="email" type="email" autocomplete="username" required placeholder="Enter administrator email" />
+        <label for="adminPassword">Password</label>
+        <input id="adminPassword" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password" />
+        <button id="adminLoginButton" class="button button-approve" type="submit">Sign in to management</button>
+        <p id="adminLoginNote" class="admin-login-note" role="status" aria-live="polite" hidden></p>
+      </form>
+      <div class="admin-login-links">
+        <a href="login.html">Customer / restaurant sign in</a>
+        <p><a href="login.html?reset=1">Need to reset your password?</a></p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="scripts/admin-login.js?v=20261010-separate-admin-login"></script>
+</body>
+</html>
