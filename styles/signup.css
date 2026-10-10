@@ -1,0 +1,2 @@
+/* SIGN-UP PAGE ONLY. Shared layout and components are in site.css. */
+.auth-wrap{max-width:500px}.auth-wrap .brand{margin-bottom:28px}.password-row{display:flex;gap:8px;align-items:center}.password-row input{flex:1;min-width:0}.password-toggle{border:1px solid var(--line);border-radius:12px;padding:12px;background:white;cursor:pointer}.field-error{color:#a12828;font-size:13px;margin:6px 0 0}
