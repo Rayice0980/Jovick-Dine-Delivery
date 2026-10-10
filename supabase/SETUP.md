@@ -2,48 +2,51 @@
 
 This project uses plain HTML, CSS and JavaScript with the pinned Supabase JavaScript client.
 
-## 1. Choose the correct Supabase project
+## Dedicated project
 
-Use a dedicated Supabase project for Jovick Dine Delivery. An existing project in the connected account has a populated `contact_messages` table, so do not apply this setup there unless you have confirmed that project belongs to this website.
+The dedicated project is **Jovick Dine Delivery** in the **Jovick Travel & Tours** organization, region London (eu-west-2).
 
-## 2. Add the public connection values
+- Project URL: https://iveyrlvlejpdrbymsjsw.supabase.co
+- Project reference: iveyrlvlejpdrbymsjsw
+- Public publishable key: configured in scripts/supabase-config.js
 
-Open `scripts/supabase-config.js` and replace:
-- `PASTE_YOUR_SUPABASE_PROJECT_URL_HERE` with the Project URL from Supabase **Project Settings → API**.
-- `PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE` with the project's **publishable key** (starts with `sb_publishable_`). A legacy `anon` key also works if that is what the project provides.
+The separate pre-existing project and its contact_messages rows were not used or modified for this setup.
 
-These are public browser values. Never use a secret key or `service_role` key in website code, HTML, CSS, GitHub, or browser environment variables.
+## 1. Browser connection settings
 
-## 3. Create the database tables and security policies
+The project URL and publishable key are already configured in scripts/supabase-config.js. These values are intended to be public in browser code. Never place a Supabase secret or service_role key in website code, HTML, CSS, GitHub, or browser environment variables.
 
-Open the selected project's **SQL Editor**, review and run `supabase/setup/customer_restaurant_auth.sql`. It creates:
-- `public.profiles` — one account profile per Supabase Auth user.
-- `public.restaurants` — restaurant details and approval status.
+## 2. Database schema and account security
+
+The reviewed SQL file supabase/setup/customer_restaurant_auth.sql has been applied to the dedicated project. It creates:
+- public.profiles — one account profile per Supabase Auth user.
+- public.restaurants — restaurant details and approval status.
 - Row Level Security (RLS) policies and restricted database grants.
 - A private signup trigger that creates profiles and places restaurant accounts into pending review.
 
 The browser cannot choose its own database permissions. The profile's account type is not user-editable, and a restaurant cannot change its approval status from the browser.
 
-## 4. Configure email confirmation
+## 3. Finish Auth URL configuration in the dashboard
 
-In the Supabase Dashboard, open **Authentication → URL Configuration**:
+In the Supabase Dashboard for Jovick Dine Delivery, open Authentication → URL Configuration:
 - Set the Site URL to your actual deployed website URL.
-- Add your local Live Server URL (for example, `http://127.0.0.1:5500/**`) and the deployed site's login page URL to Redirect URLs.
+- Add your local Live Server URL (for example, http://127.0.0.1:5500/**) and the deployed site's login page URL to Redirect URLs.
 - Keep email confirmation enabled for real customer accounts.
 
-The signup page sends confirmation links to `login.html`. Test the flow using your deployed website or VS Code Live Server; opening the HTML files directly with a `file://` URL is not supported for Supabase Auth.
+These dashboard URL settings require a manual check; they have not been changed automatically. The signup page sends confirmation links to login.html. Test using the deployed website or VS Code Live Server; opening the HTML files directly with a file:// URL is not supported for Supabase Auth.
 
-## 5. Approve a restaurant
+## 4. Approve a restaurant
 
-New restaurant accounts are created with status `pending`. Review business details before approving them. An administrator can update `public.restaurants.status` to `approved` in the SQL Editor after checking the business. Do not grant restaurant access just because a signup form requested the restaurant account type.
+New restaurant accounts are created with status pending. Review business details before approving them. An administrator can update public.restaurants.status to approved in the SQL Editor after checking the business. Do not grant restaurant access just because a signup form requested the restaurant account type.
 
-## 6. Verify the security model
+## 5. Security model
 
 - Signed-out visitors cannot read profiles or restaurant records.
 - A signed-in user can read only their own profile.
-- A user can update only their own `full_name` and `phone`; they cannot update `account_type`.
+- A user can update only their own full_name and phone; they cannot update account_type.
 - A restaurant owner can read only their own restaurant record.
 - Browser users cannot insert or update restaurant records or change approval status.
+- The signup trigger is in the non-public private schema, has an empty search path, and has execute privileges revoked from browser roles.
 - Never add a Supabase secret/service-role key to this static site.
 
 This setup does not yet include customer orders, menu management, restaurant dashboard pages, admin approval screens, payments, or delivery tracking.
