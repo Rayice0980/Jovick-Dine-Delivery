@@ -3,10 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Sign in to your Jovick Dine Delivery account."
-    />
+    <meta name="description" content="Sign in to your customer or restaurant business account with Jovick Dine Delivery." />
+    <meta name="theme-color" content="#236b45" />
     <title>Sign In | Jovick Dine Delivery</title>
     <link rel="stylesheet" href="styles/login.css" />
   </head>
@@ -15,61 +13,39 @@
     <main class="page-content">
       <div class="container">
         <div class="auth-wrap">
-          <a class="brand" href="index.html">
+          <a class="brand" href="index.html" aria-label="Jovick Dine Delivery home">
             <span class="brand-mark">J</span>
-            <span>jovick dine<small>GOOD FOOD. GOOD MOOD.</small> </span>
+            <span>jovick dine<small>GOOD FOOD. GOOD MOOD.</small></span>
           </a>
-          <div class="form-card">
-            <h2>Welcome back.</h2>
-            <p>Your next favourite meal is waiting.</p>
-            <form
-              data-demo-form
-              data-success="Demo only: account authentication is not connected yet."
-            >
+          <div class="form-card account-form-card">
+            <span class="eyebrow">Welcome back</span>
+            <h1 class="auth-title">Sign in to Jovick</h1>
+            <p>Choose your account type to continue.</p>
+            <form data-demo-form id="loginForm" data-success="Demo only: sign-in is not connected to a real account service.">
+              <div class="field">
+                <label for="accountType">Account type</label>
+                <select id="accountType" name="accountType" required>
+                  <option value="customer">Customer account</option>
+                  <option value="restaurant">Restaurant business account</option>
+                </select>
+              </div>
               <div class="field">
                 <label for="email">Email address</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autocomplete="email"
-                  required
-                  placeholder="you@example.com"
-                />
+                <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
               </div>
               <div class="field">
                 <label for="password">Password</label>
                 <div class="password-row">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autocomplete="current-password"
-                    required
-                    placeholder="Enter your password"
-                  />
-                  <button
-                    class="password-toggle"
-                    id="togglePassword"
-                    type="button"
-                    aria-pressed="false"
-                  >
-                    Show
-                  </button>
+                  <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password" />
+                  <button class="password-toggle" id="togglePassword" type="button" aria-pressed="false">Show</button>
                 </div>
               </div>
-              <button class="btn" style="width: 100%" type="submit">
-                Sign in ↗
-              </button>
-              <p class="form-note" data-form-note aria-live="polite">
-                This is a UI demo; no account is created or authenticated.
-              </p>
+              <button class="btn account-submit" type="submit">Sign in <span aria-hidden="true">↗</span></button>
+              <p class="form-note" data-form-note aria-live="polite">Front-end preview only. No passwords are sent or checked, and no one is signed in.</p>
             </form>
           </div>
-          <p style="margin-top: 20px">
-            New to Jovick?
-            <a class="text-link" href="signup.html">Create an account</a>
-          </p>
+          <p class="auth-switch">New to Jovick? <a class="text-link" href="signup.html">Create an account</a></p>
+          <p class="auth-switch"><a class="text-link" href="index.html">← Back to Jovick Dine Delivery</a></p>
         </div>
       </div>
     </main>
