@@ -279,6 +279,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           save.disabled = false; available.disabled = false;
         }
       });
+      available.addEventListener("change", () => save.click());
       controls.append(priceLabel, menuType, availableLabel, save);
       row.append(info, controls, feedback);
       root.append(row);
