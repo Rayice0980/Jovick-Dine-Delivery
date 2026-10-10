@@ -1,6 +1,6 @@
 import { supabase, supabaseConfigured } from "./supabase-client.js";
 
-// Keep the existing static menu as a fallback if the network is unavailable.
+// Only approved businesses' live menu items are shown; there is no sample-menu fallback.
 window.addEventListener("load", async () => {
   if (!supabaseConfigured || !supabase) return;
 
