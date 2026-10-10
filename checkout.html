@@ -26,9 +26,8 @@
       <section class="page-content">
         <div class="container split" style="align-items: start">
           <form
+            id="checkoutForm"
             class="form-card"
-            data-demo-form
-            data-success="Demo only: your order was not sent to a restaurant and no payment was taken."
           >
             <h2 style="font-size: 27px">Where should we deliver?</h2>
             <div class="form-grid">
@@ -107,11 +106,9 @@
                 placeholder="Nearby landmark, gate instructions or other helpful details"
               ></textarea>
             </div>
-            <button class="btn" type="submit">Submit demo order ↗</button>
-            <p class="form-note" data-form-note aria-live="polite">
-              Demo only: this form does not send an order or collect payment.
-              Confirm delivery coverage and payment options with the business
-              before launch.
+            <button class="btn" id="placeOrderButton" type="submit">Place order ↗</button>
+            <p class="form-note" id="checkoutNote" role="status" aria-live="polite">
+              Sign in to place an order. No payment will be taken through this form.
             </p>
           </form>
           <aside class="form-card">
@@ -127,8 +124,9 @@
               <span>Delivery fee</span><span>Confirmed by business</span>
             </div>
             <p class="form-note">
-              The menu and prices are demonstration content. Final totals,
-              delivery fee and availability must be confirmed before launch.
+              Prices are checked against the current menu when you submit.
+              Delivery fee is currently set to ₦0 pending business configuration.
+              Payment preferences are recorded; no payment is processed here.
             </p>
             <a class="btn btn-outline" style="width: 100%" href="foods.html"
               >Back to menu</a
@@ -139,6 +137,6 @@
     </main>
     <div id="siteFooter"></div>
     <script src="scripts/app.js" defer></script>
-    <script src="scripts/checkout.js" defer></script>
+    <script type="module" src="scripts/checkout.js"></script>
   </body>
 </html>
