@@ -1,18 +1,39 @@
 # Jovick Dine Delivery
 
-A responsive website for a Nigerian food delivery brand headquartered in Abuja, built with plain HTML, CSS and vanilla JavaScript.
+A responsive Nigerian food delivery website for a brand headquartered in Abuja, built with plain HTML, CSS and vanilla JavaScript.
 
-## Pages
-- `index.html` — landing page and popular dishes
-- `foods.html` — searchable menu, category filters and shopping bag
-- `about.html` — brand story and values
-- `features.html` — how ordering works
-- `contact.html` — contact form UI
-- `faq.html` — common questions
-- `login.html` and `signup.html` — authentication UI
+## Run it on your computer
 
-## Run locally
-Open `index.html` in a modern browser. No build step or package manager is required.
+1. On the GitHub repository page, click the green **Code** button.
+2. Choose **Download ZIP** and extract the ZIP file.
+3. Open the extracted folder in Visual Studio Code (or another code editor).
+4. Open `index.html` in your browser. For the best local development experience, use VS Code with the Live Server extension.
 
-## Before launch
-This is a static front-end. The cart is stored in browser local storage; forms show demo feedback only. Orders are not sent to a server, accounts are not authenticated, and payments, live delivery tracking and rider dispatch are not implemented. Connect a backend and payment provider before accepting real orders. Confirm menu prices, dish imagery, contact details, delivery coverage, service hours and availability with the business. Menu images currently load from Unsplash and require an internet connection.
+No package manager, build step, framework or server is required for the front-end demo.
+
+## Pages and their files
+
+Every page has its own HTML file, stylesheet and JavaScript file:
+
+| Page | HTML | Page CSS | Page JavaScript |
+| --- | --- | --- | --- |
+| Home | `index.html` | `styles/index.css` | `scripts/index.js` |
+| Menu | `foods.html` | `styles/foods.css` | `scripts/foods.js` |
+| About | `about.html` | `styles/about.css` | `scripts/about.js` |
+| How it works | `features.html` | `styles/features.css` | `scripts/features.js` |
+| Contact | `contact.html` | `styles/contact.css` | `scripts/contact.js` |
+| FAQs | `faq.html` | `styles/faq.css` | `scripts/faq.js` |
+| Sign in | `login.html` | `styles/login.css` | `scripts/login.js` |
+| Sign up | `signup.html` | `styles/signup.css` | `scripts/signup.js` |
+| Checkout | `checkout.html` | `styles/checkout.css` | `scripts/checkout.js` |
+
+## Shared files
+
+- `styles/site.css` — shared visual system, responsive layout, navigation, footer, menu cards and cart styling.
+- `scripts/app.js` — shared navigation/footer rendering, menu data, category filtering, shopping bag, and demo form feedback.
+
+Each HTML page loads the shared files and its own page-specific CSS and JavaScript. Change the page-specific files for one page; change the shared files when you want a site-wide update. Comments at the top of the page files explain their purpose.
+
+## Before accepting real orders
+
+This repository is a static front-end demonstration. The shopping bag uses browser local storage. Checkout, contact, sign-in and sign-up do not submit to a live service; there is no real account authentication, payment processing, order management or delivery tracking. Connect a secure backend and payment provider before launch. Confirm the menu, prices, photos, delivery areas, business contact details and service hours. Menu photos currently load from Unsplash and need an internet connection.
