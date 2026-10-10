@@ -58,10 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (sessionError) throw sessionError;
     const user = sessionData.session?.user;
     if (!user) {
-      showNote("Please sign in to place an order. Your cart will stay saved on this device.", true);
-      const link = document.createElement("a"); link.className = "text-link"; link.href = "login.html?next=checkout"; link.textContent = " Sign in to continue"; note.append(link);
-      submitButton.disabled = true;
-      form.querySelectorAll("input, select, textarea, button[type=submit]").forEach((el) => { el.disabled = true; });
+      window.location.replace("login.html?next=checkout");
       return;
     }
     const [profileResult, menuResult] = await Promise.all([
