@@ -37,3 +37,12 @@ Each HTML page loads the shared files and its own page-specific CSS and JavaScri
 ## Before accepting real orders
 
 This repository is a static front-end demonstration. The shopping bag uses browser local storage. Checkout, contact, sign-in and sign-up do not submit to a live service; there is no real account authentication, payment processing, order management or delivery tracking. Connect a secure backend and payment provider before launch. Confirm the menu, prices, photos, delivery areas, business contact details and service hours. Menu photos currently load from Unsplash and need an internet connection.
+
+## Account pages
+
+- `signup.html` — choose a customer account or restaurant business account.
+- `styles/signup.css` and `scripts/signup.js` — signup layout, conditional restaurant fields, password visibility and password matching.
+- `login.html` — choose the account type before entering sign-in details.
+- `styles/login.css` and `scripts/login.js` — sign-in layout and password visibility.
+
+The account pages currently provide front-end forms only. They do **not** create accounts, store user details, verify restaurant businesses, authenticate passwords or protect private pages. Do not collect real customer details until a secure backend and authentication service have been connected. Restaurant verification, customer profiles, restaurant dashboards and order management should be added as backend-backed features.
