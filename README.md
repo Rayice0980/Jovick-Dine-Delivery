@@ -38,6 +38,14 @@ Each HTML page loads the shared files and its own page-specific CSS and JavaScri
 
 This repository is a static front-end demonstration. The shopping bag uses browser local storage. Supabase now handles account registration and sign-in, but checkout, order management, payment processing and delivery tracking are not implemented as live services. Connect and test a secure backend and payment provider before launch. Confirm the menu, prices, photos, delivery areas, business contact details and service hours. Menu photos currently load from Unsplash and need an internet connection.
 
+## Live menu catalogue
+
+- `supabase/migrations/20261010190000_public_menu_catalogue.sql` creates the public, read-only `menu_items` catalogue and seeds nine sample dishes.
+- `scripts/menu-sync.js` reads available menu items from the dedicated Supabase project and updates the homepage and menu page. The built-in menu remains a fallback if Supabase is unavailable.
+- Menu rows can be edited in Supabase Dashboard → Table Editor → `menu_items`. Update sample names, prices, descriptions and photo URLs before accepting real orders. Set `is_available` to false to hide a dish from customers.
+- Row Level Security permits public reads of available dishes only. Browser users are not granted permission to change menu prices.
+- The cart remains a browser-side demonstration. Checkout does not create real orders or process payments.
+
 ## Customer dashboard
 
 - `dashboard.html` — signed-in customer overview, profile editor, order-history placeholder, and links to the food menu.
