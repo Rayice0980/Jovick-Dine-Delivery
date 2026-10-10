@@ -449,3 +449,41 @@ body[data-page="restaurant-dashboard"] {
     width: 100%;
   }
 }
+
+
+.menu-section-heading {
+  grid-column: 1 / -1;
+  padding: 15px 0 2px;
+  border-bottom: 1px solid var(--rd-line);
+}
+.menu-section-heading h3 {
+  margin: 0 0 4px;
+  color: var(--rd-dark);
+  font-size: 1.15rem;
+}
+.menu-section-heading p,
+.menu-section-empty {
+  margin: 0 0 8px;
+  color: var(--rd-muted);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+.menu-section-empty {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px dashed var(--rd-line);
+  border-radius: 10px;
+}
+.menu-card-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.menu-card-actions button.menu-delete-button {
+  color: #a02c26;
+}
+.menu-card-actions button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
