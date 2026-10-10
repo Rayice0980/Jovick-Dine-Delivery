@@ -15,28 +15,28 @@ No package manager, build step, framework or server is required for the front-en
 
 Every page has its own HTML file, stylesheet and JavaScript file:
 
-| Page         | HTML            | Page CSS              | Page JavaScript       |
-| ------------ | --------------- | --------------------- | --------------------- |
-| Home         | `index.html`    | `styles/index.css`    | `scripts/index.js`    |
-| Menu         | `foods.html`    | `styles/foods.css`    | `scripts/foods.js`    |
-| About        | `about.html`    | `styles/about.css`    | `scripts/about.js`    |
+| Page | HTML | Page CSS | Page JavaScript |
+| --- | --- | --- | --- |
+| Home | `index.html` | `styles/index.css` | `scripts/index.js` |
+| Menu | `foods.html` | `styles/foods.css` | `scripts/foods.js` |
+| About | `about.html` | `styles/about.css` | `scripts/about.js` |
 | How it works | `features.html` | `styles/features.css` | `scripts/features.js` |
-| Contact      | `contact.html`  | `styles/contact.css`  | `scripts/contact.js`  |
-| FAQs         | `faq.html`      | `styles/faq.css`      | `scripts/faq.js`      |
-| Sign in      | `login.html`    | `styles/login.css`    | `scripts/login.js`    |
-| Sign up      | `signup.html`   | `styles/signup.css`   | `scripts/signup.js`   |
-| Checkout     | `checkout.html` | `styles/checkout.css` | `scripts/checkout.js` |
+| Contact | `contact.html` | `styles/contact.css` | `scripts/contact.js` |
+| FAQs | `faq.html` | `styles/faq.css` | `scripts/faq.js` |
+| Sign in | `login.html` | `styles/login.css` | `scripts/login.js` |
+| Sign up | `signup.html` | `styles/signup.css` | `scripts/signup.js` |
+| Checkout | `checkout.html` | `styles/checkout.css` | `scripts/checkout.js` |
 
 ## Shared files
 
 - `styles/site.css` — retained as the original shared style reference; individual pages no longer depend on it.
 - `scripts/app.js` — shared navigation/footer rendering, menu data, category filtering, shopping bag, and demo form feedback.
 
-Each HTML page loads the shared files and its own page-specific CSS and JavaScript. Change the page-specific files for one page; change the shared files when you want a site-wide update. Comments at the top of the page files explain their purpose.
+Each HTML page loads the shared files and its own page-specific CSS and JavaScript. Change the page-specific files for one page; change the shared files when you want a site-wide update.
 
 ## Before accepting real orders
 
-This repository is a static front-end demonstration. The shopping bag uses browser local storage. Checkout, contact, sign-in and sign-up do not submit to a live service; there is no real account authentication, payment processing, order management or delivery tracking. Connect a secure backend and payment provider before launch. Confirm the menu, prices, photos, delivery areas, business contact details and service hours. Menu photos currently load from Unsplash and need an internet connection.
+This repository is a static front-end demonstration. The shopping bag uses browser local storage. Supabase now handles account registration and sign-in, but checkout, order management, payment processing and delivery tracking are not implemented as live services. Connect and test a secure backend and payment provider before launch. Confirm the menu, prices, photos, delivery areas, business contact details and service hours. Menu photos currently load from Unsplash and need an internet connection.
 
 ## Account pages
 
@@ -45,12 +45,14 @@ This repository is a static front-end demonstration. The shopping bag uses brows
 - `login.html` — choose the account type before entering sign-in details.
 - `styles/login.css` and `scripts/login.js` — sign-in layout and password visibility.
 
-The account pages currently provide front-end forms only. They do **not** create accounts, store user details, verify restaurant businesses, authenticate passwords or protect private pages. Do not collect real customer details until a secure backend and authentication service have been connected. Restaurant verification, customer profiles, restaurant dashboards and order management should be added as backend-backed features.
-
 ## Supabase customer and restaurant authentication
 
-The account pages now use Supabase Auth for email/password registration, sign-in, email confirmation, sign-out and password recovery. The client settings are in `scripts/supabase-config.js`; fill in the project's public URL and publishable key after choosing the correct Supabase project.
+The account pages use Supabase Auth for email/password registration, sign-in, email confirmation, sign-out and password recovery. The project URL and public publishable key are configured in `scripts/supabase-config.js`.
 
-Before testing real registration, follow [the Supabase setup guide](supabase/SETUP.md) and run the reviewed SQL in `supabase/setup/customer_restaurant_auth.sql` against a dedicated Jovick Dine Delivery database. The SQL enables Row Level Security, creates profiles and restaurant records, limits profile updates to a user's name and phone, and keeps new restaurant registrations pending until reviewed.
+The dedicated Supabase project is **Jovick Dine Delivery** in the **Jovick Travel & Tours** organization, London region (`eu-west-2`). Project reference: `iveyrlvlejpdrbymsjsw`. The reviewed SQL in `supabase/setup/customer_restaurant_auth.sql` has been applied to this dedicated project. It creates profiles and restaurant records, enables Row Level Security, limits profile updates to a user's name and phone, and keeps new restaurant registrations pending until reviewed.
 
-**Important:** Supabase connection values in the browser must be public URL/publishable-key values only. Never add a secret or service-role key to the website. The database setup has not been applied to a live project yet because the existing connected project contains saved contact-message records and needs confirmation before it is changed.
+The previous Supabase project and its saved `contact_messages` records were kept separate and were not used for this setup.
+
+Before testing real registration, follow [the Supabase setup guide](supabase/SETUP.md) and complete **Authentication → URL Configuration** in the Supabase Dashboard with the deployed website URL and local Live Server redirect URL. Those dashboard URL settings still need a manual check.
+
+**Security:** Browser code must contain only the public project URL and publishable key. Never add a secret or service-role key to the website. This setup does not yet include customer orders, menu management, restaurant dashboard pages, admin approval screens, payments, or delivery tracking.
