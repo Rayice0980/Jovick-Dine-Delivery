@@ -38,6 +38,15 @@ Each HTML page loads the shared files and its own page-specific CSS and JavaScri
 
 This repository is a static front-end demonstration. The shopping bag uses browser local storage. Supabase now handles account registration and sign-in, but checkout, order management, payment processing and delivery tracking are not implemented as live services. Connect and test a secure backend and payment provider before launch. Confirm the menu, prices, photos, delivery areas, business contact details and service hours. Menu photos currently load from Unsplash and need an internet connection.
 
+## Customer dashboard
+
+- `dashboard.html` — signed-in customer overview, profile editor, order-history placeholder, and links to the food menu.
+- `styles/dashboard.css` — responsive dashboard styling.
+- `scripts/dashboard.js` — checks the Supabase session, loads the signed-in user's own profile, saves permitted profile fields, and signs out.
+- Successful customer sign-in opens the dashboard. Dashboard profile updates use the existing Row Level Security policies and only update `full_name` and `phone`.
+
+**Ordering status:** the menu and shopping bag remain demonstration features. The dashboard does not claim to submit live orders or take payment; order placement, trusted price validation, payment processing, and delivery tracking still need a secure backend.
+
 ## Account pages
 
 - `signup.html` — choose a customer account or restaurant business account.
