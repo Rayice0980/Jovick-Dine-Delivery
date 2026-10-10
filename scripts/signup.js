@@ -1,32 +1,51 @@
-/* SIGN-UP PAGE SCRIPT: visibility toggle and matching password check. */
+/* Signup page: account type selection, business fields and password checks. */
 document.addEventListener("DOMContentLoaded", function () {
-  var form = document.querySelector("[data-demo-form]"),
-    password = document.getElementById("signupPassword"),
-    confirm = document.getElementById("confirmPassword"),
-    error = document.getElementById("passwordMatchError"),
-    toggle = document.getElementById("toggleSignupPassword");
-  if (toggle && password)
-    toggle.addEventListener("click", function () {
-      var show = password.type === "password";
-      password.type = show ? "text" : "password";
-      if (confirm) confirm.type = show ? "text" : "password";
-      toggle.textContent = show ? "Hide" : "Show";
+  const form = document.getElementById("signupForm");
+  const businessFields = document.getElementById("restaurantFields");
+  const accountTypeInputs = document.querySelectorAll('input[name="accountType"]');
+  const password = document.getElementById("signupPassword");
+  const confirmPassword = document.getElementById("confirmPassword");
+  const passwordError = document.getElementById("passwordMatchError");
+  const passwordToggle = document.getElementById("toggleSignupPassword");
+
+  function updateAccountFields() {
+    const selectedType = document.querySelector('input[name="accountType"]:checked');
+    const isRestaurant = selectedType && selectedType.value === "restaurant";
+    if (!businessFields) return;
+    businessFields.hidden = !isRestaurant;
+    businessFields.disabled = !isRestaurant;
+    businessFields.querySelectorAll("input, select, textarea").forEach(function (field) {
+      field.required = isRestaurant;
     });
-  if (form && password && confirm)
-    form.addEventListener(
-      "submit",
-      function (event) {
-        if (password.value !== confirm.value) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          if (error) error.textContent = "Your passwords do not match.";
-          confirm.setAttribute("aria-invalid", "true");
-          confirm.focus();
-        } else {
-          if (error) error.textContent = "";
-          confirm.removeAttribute("aria-invalid");
-        }
-      },
-      true,
-    );
+  }
+
+  accountTypeInputs.forEach(function (input) {
+    input.addEventListener("change", updateAccountFields);
+  });
+  updateAccountFields();
+
+  if (passwordToggle && password) {
+    passwordToggle.addEventListener("click", function () {
+      const showPassword = password.type === "password";
+      password.type = showPassword ? "text" : "password";
+      if (confirmPassword) confirmPassword.type = showPassword ? "text" : "password";
+      passwordToggle.textContent = showPassword ? "Hide" : "Show";
+      passwordToggle.setAttribute("aria-pressed", String(showPassword));
+    });
+  }
+
+  if (form && password && confirmPassword) {
+    form.addEventListener("submit", function (event) {
+      if (password.value !== confirmPassword.value) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (passwordError) passwordError.textContent = "Your passwords do not match. Please try again.";
+        confirmPassword.setAttribute("aria-invalid", "true");
+        confirmPassword.focus();
+        return;
+      }
+      if (passwordError) passwordError.textContent = "";
+      confirmPassword.removeAttribute("aria-invalid");
+    }, true);
+  }
 });
