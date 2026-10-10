@@ -44,6 +44,7 @@ document.addEventListener("click", async (event) => {
       window.location.assign(profile.account_type === "restaurant" ? "restaurant-dashboard.html" : "login.html");
       return;
     }
+    if (addButton) window.jovickAddToCartAuthorized?.(Number(addButton.dataset.add));
   } catch (error) {
     console.error("Could not verify account access.", error);
     window.location.assign("login.html");
