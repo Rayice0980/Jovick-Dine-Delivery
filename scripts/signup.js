@@ -22,6 +22,11 @@ document.addEventListener("DOMContentLoaded", function () {
   accountTypeInputs.forEach(function (input) {
     input.addEventListener("change", updateAccountFields);
   });
+  if (form) {
+    form.addEventListener("reset", function () {
+      window.setTimeout(updateAccountFields, 0);
+    });
+  }
   updateAccountFields();
 
   if (passwordToggle && password) {
