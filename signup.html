@@ -22,7 +22,7 @@
             <h1 class="auth-title">Create your account</h1>
             <p>Choose how you want to use Jovick Dine Delivery.</p>
 
-            <form data-demo-form id="signupForm" data-success="Demo only: the form was checked, but no account was created or saved.">
+            <form data-auth-form id="signupForm">
               <fieldset class="account-type-fieldset">
                 <legend>What type of account do you need?</legend>
                 <div class="account-type-options">
@@ -95,7 +95,7 @@
                 <span>I agree to the terms of use and privacy policy.</span>
               </label>
               <button class="btn account-submit" type="submit">Create account <span aria-hidden="true">↗</span></button>
-              <p class="form-note" data-form-note aria-live="polite">Front-end preview only. Secure account creation is not connected yet, and your details will not be saved.</p>
+              <p class="form-note" data-form-note aria-live="polite">Connect your Supabase project to create an account securely.</p>
             </form>
           </div>
           <p class="auth-switch">Already have an account? <a class="text-link" href="login.html">Sign in</a></p>
@@ -105,6 +105,6 @@
     </main>
     <div id="siteFooter"></div>
     <script src="scripts/app.js" defer></script>
-    <script src="scripts/signup.js" defer></script>
+    <script type="module" src="scripts/signup.js"></script>
   </body>
 </html>
