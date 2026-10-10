@@ -46,3 +46,11 @@ This repository is a static front-end demonstration. The shopping bag uses brows
 - `styles/login.css` and `scripts/login.js` — sign-in layout and password visibility.
 
 The account pages currently provide front-end forms only. They do **not** create accounts, store user details, verify restaurant businesses, authenticate passwords or protect private pages. Do not collect real customer details until a secure backend and authentication service have been connected. Restaurant verification, customer profiles, restaurant dashboards and order management should be added as backend-backed features.
+
+## Supabase customer and restaurant authentication
+
+The account pages now use Supabase Auth for email/password registration, sign-in, email confirmation, sign-out and password recovery. The client settings are in `scripts/supabase-config.js`; fill in the project's public URL and publishable key after choosing the correct Supabase project.
+
+Before testing real registration, follow [the Supabase setup guide](supabase/SETUP.md) and run the reviewed SQL in `supabase/setup/customer_restaurant_auth.sql` against a dedicated Jovick Dine Delivery database. The SQL enables Row Level Security, creates profiles and restaurant records, limits profile updates to a user's name and phone, and keeps new restaurant registrations pending until reviewed.
+
+**Important:** Supabase connection values in the browser must be public URL/publishable-key values only. Never add a secret or service-role key to the website. The database setup has not been applied to a live project yet because the existing connected project contains saved contact-message records and needs confirmation before it is changed.
