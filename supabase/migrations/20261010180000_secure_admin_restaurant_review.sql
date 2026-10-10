@@ -1,15 +1,11 @@
 -- Admin-only restaurant review workflow for Jovick Dine Delivery.
--- The first administrator is provisioned explicitly, never by client-side signup.
+-- Provision the first administrator separately through a trusted database session.
 create table if not exists public.admin_users (
   user_id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()
 );
 alter table public.admin_users enable row level security;
 revoke all on table public.admin_users from anon, authenticated;
-
-insert into public.admin_users (user_id)
-values ('292f2179-1dd1-402a-a4c9-5287f9d0d143')
-on conflict (user_id) do nothing;
 
 create or replace function public.admin_list_restaurants()
 returns jsonb language plpgsql security definer set search_path = ''
