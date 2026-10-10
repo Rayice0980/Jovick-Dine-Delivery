@@ -45,6 +45,20 @@
               <button class="btn" id="signOutButton" type="button" hidden>Sign out</button>
               <p class="form-note" data-form-note aria-live="polite">Connect your Supabase project to sign in securely.</p>
             </form>
+            <form id="resetPasswordForm" hidden>
+              <h2 class="reset-title">Choose a new password</h2>
+              <div class="field">
+                <label for="newPassword">New password</label>
+                <input id="newPassword" name="newPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="At least 8 characters" />
+              </div>
+              <div class="field">
+                <label for="confirmNewPassword">Confirm new password</label>
+                <input id="confirmNewPassword" name="confirmNewPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="Enter the same password again" />
+              </div>
+              <p class="field-error" id="resetPasswordError" aria-live="polite"></p>
+              <button class="btn account-submit" type="submit">Save new password</button>
+              <p class="form-note" id="resetPasswordNote" aria-live="polite">Choose a new password for your account.</p>
+            </form>
           </div>
           <p class="auth-switch">New to Jovick? <a class="text-link" href="signup.html">Create an account</a></p>
           <p class="auth-switch"><a class="text-link" href="index.html">← Back to Jovick Dine Delivery</a></p>
