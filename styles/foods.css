@@ -1,0 +1,2 @@
+/* MENU PAGE ONLY. Shared layout and components are in site.css. */
+.menu-results{color:var(--muted);font-size:14px;margin:18px 0 0}#foodSearch{min-height:48px}.page-content .categories{align-items:stretch}.page-content .category{min-width:0}@media(max-width:760px){.page-content .categories{grid-template-columns:repeat(3,minmax(0,1fr))!important}}@media(max-width:420px){.page-content .categories{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
