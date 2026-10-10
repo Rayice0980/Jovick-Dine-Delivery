@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (error) throw error;
     currentUser = data.session?.user || null;
     if (!currentUser) {
-      window.location.replace("login.html?next=admin");
+      window.location.replace("admin-login.html");
       return;
     }
     document.getElementById("adminIdentity").textContent = currentUser.email || "Signed in administrator";
@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { data, error } = await supabase.rpc("admin_list_restaurants");
       if (error) {
         if (/administrator access required/i.test(error.message || "")) {
-          showNotice("This signed-in account is not authorized to administer restaurant applications. Sign in with the designated administrator account.", "error");
+          showNotice("This signed-in account is not authorized to administer restaurant applications. Sign in through the management login with the designated administrator account.", "error");
         } else {
           showNotice(error.message || "Could not load restaurant applications.", "error");
         }
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       details.append(element("h3", "", item.business_name || "Unnamed restaurant"));
       details.append(element("span", "application-status " + item.status, statusLabels[item.status] || item.status));
       details.append(element("p", "application-meta", (item.business_type || "Business type not provided") + " · Submitted " + prettyDate(item.created_at)));
-      details.append(element("p", "application-meta", "Owner: " + (moneySafeText(item.owner_name)) + " · " + moneySafeText(item.owner_email)));
+      details.append(element("p", "application-meta", "Owner: " + moneySafeText(item.owner_name) + " · " + moneySafeText(item.owner_email)));
       details.append(element("p", "application-meta", "Phone: " + moneySafeText(item.owner_phone)));
       details.append(element("p", "application-address", "Business address: " + moneySafeText(item.business_address)));
       card.append(details);
@@ -148,6 +148,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       signOutButton.disabled = false;
       return;
     }
-    window.location.replace("login.html?next=admin");
+    window.location.replace("admin-login.html");
   });
 });
