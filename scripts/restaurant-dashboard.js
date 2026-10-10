@@ -340,9 +340,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             .eq("restaurant_id", restaurant.id).eq("dish_id", dish.id);
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const { error: menuError } = await supabase.from("menu_items")
-            .update({ is_available: nextAvailable })
-            .eq("restaurant_id", restaurant.id).eq("slug", slug);
+          // A dish can have availability saved without a menu_items row (for
+          // example, if an earlier save only completed its first database write).
+          // Upsert here repairs that gap as well as toggling existing menu items.
+          const { error: menuError } = await supabase.from("menu_items").upsert({
+            slug,
+            name: dish.name,
+            category: dish.category,
+            price: Number(availability.price),
+            description: dish.description || "",
+            image_url: dish.image_url || "",
+            restaurant_id: restaurant.id,
+            menu_type: "everyday",
+            tag: "Everyday favourite",
+            rating: 4.7,
+            sort_order: Number(dish.sort_order || 0),
+            is_available: nextAvailable
+          }, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
           await loadMenu();
