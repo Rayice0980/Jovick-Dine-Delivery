@@ -122,9 +122,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const amount = document.createElement("p"); amount.textContent = "Order total: " + money(order.total);
       const status = document.createElement("p"); status.textContent = "Status: Awaiting business confirmation. Payment has not been processed.";
       const requestedFor = values.get("requestedFor");
-      if (requestedFor) { const schedule = document.createElement("p"); schedule.textContent = "Requested time: " + new Date(String(requestedFor)).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); success.append(schedule); }
+      const schedule = requestedFor ? document.createElement("p") : null;
+      if (schedule) schedule.textContent = "Requested time: " + new Date(String(requestedFor)).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
       const link = document.createElement("a"); link.className = "btn"; link.href = "dashboard.html#orders"; link.textContent = "View my orders";
-      success.append(heading, number, amount, status, link); summary.replaceChildren(success);
+      success.append(heading, number, amount, status);
+      if (schedule) success.append(schedule);
+      success.append(link); summary.replaceChildren(success);
       showNote("Order saved successfully. You can view it from your customer dashboard.");
     } catch (error) {
       showNote(error.message || "We couldn't place your order. Your cart is still saved; please try again.", true);
