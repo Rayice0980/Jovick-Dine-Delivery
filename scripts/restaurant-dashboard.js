@@ -186,12 +186,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!window.confirm("Delete “" + item.name + "” from your menu? This cannot be undone.")) return;
         remove.disabled = true;
         try {
+          if (item.slug && item.slug.startsWith("catalog-")) {
+            const catalogDishId = Number(item.slug.split("-")[1]);
+            if (Number.isInteger(catalogDishId) && catalogDishId > 0) {
+              const { error: availabilityError } = await supabase.from("restaurant_dish_availability")
+                .update({ is_available: false, updated_at: new Date().toISOString() })
+                .eq("restaurant_id", restaurant.id).eq("dish_id", catalogDishId);
+              if (availabilityError) throw availabilityError;
+            }
+          }
           const { error } = await supabase.from("menu_items").delete()
             .eq("id", item.id).eq("restaurant_id", restaurant.id);
           if (error) throw error;
           if (document.getElementById("menuItemId").value === String(item.id)) resetMenuForm();
-          setMenuFeedback(item.name + " was deleted from your menu.");
+          setMenuFeedback(item.name + " was removed from your available menu.");
           await loadMenu();
+          await loadSharedCatalogue();
         } catch (error) {
           showNotice(error.message || "Could not delete this dish.", true);
           remove.disabled = false;
