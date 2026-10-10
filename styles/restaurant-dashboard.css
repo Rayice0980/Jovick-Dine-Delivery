@@ -487,3 +487,49 @@ body[data-page="restaurant-dashboard"] {
   opacity: .55;
   cursor: wait;
 }
+
+
+.catalogue-tools, .preorder-catalogue-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+  gap: 12px;
+  margin: 18px 0;
+}
+.catalogue-tools input, .catalogue-tools select, .shared-dish-controls input, .shared-dish-controls select,
+.preorder-catalogue-tools input, .preorder-catalogue-tools select, .preorder-request-form input,
+.preorder-request-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--rd-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #202a23;
+  font: inherit;
+}
+.shared-dish-catalogue { display: grid; gap: 10px; }
+.shared-dish-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(320px, 1.2fr);
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--rd-line);
+  border-radius: 14px;
+  background: #fff;
+}
+.shared-dish-info strong { display: block; color: var(--rd-dark); }
+.shared-dish-info small, .shared-dish-info p { color: var(--rd-muted); margin: 5px 0 0; }
+.shared-dish-controls { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(110px, .7fr) auto; gap: 9px; align-items: end; }
+.shared-dish-controls label { font-size: .83rem; font-weight: 700; display: grid; gap: 5px; }
+.catalogue-availability-toggle { display: flex !important; align-items: center; gap: 7px !important; padding-bottom: 10px; }
+.catalogue-availability-toggle input { width: 18px; height: 18px; }
+.shared-dish-controls .btn { padding: 10px 14px; }
+.shared-dish-feedback { grid-column: 1 / -1; color: var(--rd-muted); }
+.preorder-request-card { border-color: #f1c27b; }
+#refreshPreorders:disabled { opacity: .55; }
+@media (max-width: 760px) {
+  .catalogue-tools, .preorder-catalogue-tools { grid-template-columns: 1fr; }
+  .shared-dish-row { grid-template-columns: 1fr; }
+  .shared-dish-controls { grid-template-columns: minmax(0, 1fr) minmax(100px, .7fr); }
+  .shared-dish-controls .btn { grid-column: 1 / -1; width: 100%; }
+}
