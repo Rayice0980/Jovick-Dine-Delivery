@@ -16,6 +16,17 @@ document.addEventListener("DOMContentLoaded", function () {
     money = function (v) {
       return "₦" + Number(v).toLocaleString("en-NG");
     };
+  try {
+    var liveMenu = JSON.parse(localStorage.getItem("jovick-menu-cache") || "[]");
+    if (liveMenu.length) {
+      menu = Object.fromEntries(liveMenu.map(function (food) {
+        return [food.id, [food.name, Number(food.price)]];
+      }));
+    }
+  } catch (error) {
+    console.warn("Using the built-in checkout menu.", error);
+  }
+
   if (!summary || !items.length) return;
   var subtotal = 0,
     rows = items
