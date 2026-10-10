@@ -26,7 +26,7 @@ function header() {
           "</a>",
       )
       .join("") +
-    '<a href="faq.html">FAQs</a></nav><div class="nav-actions"><button class="cart-btn" data-cart-open aria-label="Open shopping cart">Bag <span class="cart-count" id="cartCount">' +
+    '<a href="faq.html">FAQs</a><a href="index.html" data-signout-link hidden>Sign out</a></nav><div class="nav-actions"><button class="cart-btn" data-cart-open aria-label="Open shopping cart">Bag <span class="cart-count" id="cartCount">' +
     cart.reduce((s, i) => s + i.qty, 0) +
     '</span></button><a class="profile-btn" href="login.html" data-profile-link aria-label="Open your account" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--ink)"><span aria-hidden="true">♙</span><span>Profile</span></a><a class="btn" href="foods.html">Order food ↗</a><button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button></div></div></header>'
   );
@@ -111,6 +111,11 @@ function changeQty(id, d) {
   if (i.qty <= 0) cart = cart.filter((x) => x.id !== id);
   persist();
 }
+function removeFromCart(id) {
+  cart = cart.filter((item) => item.id !== id);
+  persist();
+  toast("Dish removed from your bag");
+}
 function renderCart() {
   const el = document.getElementById("cartContents");
   if (!el) return;
@@ -140,7 +145,11 @@ function renderCart() {
           i.qty +
           '</span><button data-qty="' +
           i.id +
-          '" data-delta="1" aria-label="Add one">+</button></div></div><strong>' +
+          '" data-delta="1" aria-label="Add one">+</button></div><button type="button" data-remove="' +
+          i.id +
+          '" aria-label="Remove ' +
+          f.name +
+          ' from bag" style="margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0">Remove dish</button></div><strong>' +
           money(f.price * i.qty) +
           "</strong></div>"
         );
@@ -183,6 +192,8 @@ function boot() {
     if (e.target.id === "cartDrawer") closeCart();
     const qty = e.target.closest("[data-qty]");
     if (qty) changeQty(Number(qty.dataset.qty), Number(qty.dataset.delta));
+    const remove = e.target.closest("[data-remove]");
+    if (remove) removeFromCart(Number(remove.dataset.remove));
     const cat = e.target.closest("[data-category]");
     if (cat) {
       activeCategory = cat.dataset.category;
