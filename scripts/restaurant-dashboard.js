@@ -16,6 +16,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   let knownPreorderIds = null;
 
   const money = (value) => "₦" + Number(value || 0).toLocaleString("en-NG");
+  // menu_items currently permits only the categories used by the customer menu filters.
+  // Map broader catalogue categories into those supported groups before saving.
+  function menuCategoryForDish(category) {
+    const supported = ["Rice", "Swallow", "Grills", "Everyday", "Soups", "Sides"];
+    if (supported.includes(category)) return category;
+    if (category === "Proteins") return "Grills";
+    if (category === "Snacks") return "Sides";
+    return "Everyday"; // Pasta, noodles, and other catalogue categories.
+  }
   const statusLabels = { received:"Awaiting confirmation", confirmed:"Confirmed", preparing:"Being prepared", out_for_delivery:"Out for delivery", delivered:"Delivered", cancelled:"Cancelled" };
 
   function showNotice(text, error = false) {
@@ -286,7 +295,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const { error } = await supabase.from("restaurant_dish_availability").upsert(payload, { onConflict: "restaurant_id,dish_id" });
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const menuPayload = { slug, name: dish.name, category: dish.category, price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
+          const menuPayload = { slug, name: dish.name, category: menuCategoryForDish(dish.category), price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
           const { error: menuError } = await supabase.from("menu_items").upsert(menuPayload, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
@@ -340,9 +349,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             .eq("restaurant_id", restaurant.id).eq("dish_id", dish.id);
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const { error: menuError } = await supabase.from("menu_items")
-            .update({ is_available: nextAvailable })
-            .eq("restaurant_id", restaurant.id).eq("slug", slug);
+          // A dish can have availability saved without a menu_items row (for
+          // example, if an earlier save only completed its first database write).
+          // Upsert here repairs that gap as well as toggling existing menu items.
+          const { error: menuError } = await supabase.from("menu_items").upsert({
+            slug,
+            name: dish.name,
+            category: menuCategoryForDish(dish.category),
+            price: Number(availability.price),
+            description: dish.description || "",
+            image_url: dish.image_url || "",
+            restaurant_id: restaurant.id,
+            menu_type: "everyday",
+            tag: "Everyday favourite",
+            rating: 4.7,
+            sort_order: Number(dish.sort_order || 0),
+            is_available: nextAvailable
+          }, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
           await loadMenu();
