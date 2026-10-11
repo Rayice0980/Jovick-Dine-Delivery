@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let sharedDishes = [];
   let ownDishAvailability = [];
   let knownPreorderIds = null;
+  let knownOrderIds = null;
 
   const money = (value) => "₦" + Number(value || 0).toLocaleString("en-NG");
   // menu_items currently permits only the categories used by the customer menu filters.
@@ -99,6 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadSharedCatalogue();
     await loadPreorderRequests();
     await loadOrders();
+    window.setInterval(() => { loadOrders().catch(() => {}); }, 30000);
     document.getElementById("catalogueSearch")?.addEventListener("input", renderSharedCatalogue);
     document.getElementById("catalogueCategory")?.addEventListener("change", renderSharedCatalogue);
     document.getElementById("refreshPreorders")?.addEventListener("click", loadPreorderRequests);
@@ -482,6 +484,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => menuItems.some(item => String(item.id) === String(line.menu_item_id))); });
+    const currentOrderIds = new Set(availableOrders.map(order => String(order.id)));
+    if (knownOrderIds) {
+      const incoming = availableOrders.filter(order => !knownOrderIds.has(String(order.id)));
+      if (incoming.length) {
+        showNotice("New order" + (incoming.length > 1 ? "s" : "") + " received: " + incoming.map(order => order.order_number).join(", ") + ". Review your incoming orders.");
+      }
+    }
+    knownOrderIds = currentOrderIds;
     document.getElementById("ordersCount").textContent = String(availableOrders.length);
     if (!availableOrders.length) {
       ordersList.append(safeElement("p", "empty-state", "No incoming orders for your menu yet."));

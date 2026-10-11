@@ -69,6 +69,130 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  async function syncAcceptedPreorders(customerId) {
+    const ordersContainer = document.getElementById("ordersList");
+    if (!ordersContainer) return;
+    try {
+      const [menuResult, requestsResult] = await Promise.all([
+        supabase.rpc("get_public_available_menu"),
+        supabase.from("dish_preorder_requests")
+          .select("id,dish_name,quantity,accepted_menu_item_id,accepted_at")
+          .eq("customer_id", customerId)
+          .eq("status", "accepted")
+          .not("accepted_menu_item_id", "is", null)
+          .order("accepted_at", { ascending: false })
+      ]);
+      if (menuResult.error) throw menuResult.error;
+      if (requestsResult.error) throw requestsResult.error;
+      const menu = Array.isArray(menuResult.data) ? menuResult.data : [];
+      const accepted = requestsResult.data || [];
+      let processed = [];
+      let cart = [];
+      try {
+        processed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+        cart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+        if (!Array.isArray(processed)) processed = [];
+        if (!Array.isArray(cart)) cart = [];
+      } catch {
+        processed = [];
+        cart = [];
+      }
+      const processedSet = new Set(processed.map(String));
+      let changed = false;
+
+      // Automatically place newly accepted requests in the bag. If an earlier
+      // attempt marked one as processed but the bag is now missing it, the
+      // customer gets an explicit recovery button below instead of losing it.
+      accepted.forEach(request => {
+        const requestId = String(request.id);
+        const itemId = Number(request.accepted_menu_item_id);
+        const quantity = Number(request.quantity);
+        if (processedSet.has(requestId) || !menu.some(item => Number(item.id) === itemId) ||
+            !Number.isInteger(quantity) || quantity < 1) return;
+        const existing = cart.find(item => Number(item.id) === itemId);
+        if (existing) existing.qty = Number(existing.qty) + quantity;
+        else cart.push({ id: itemId, qty: quantity });
+        processedSet.add(requestId);
+        changed = true;
+      });
+      if (changed) {
+        localStorage.setItem("jovick-cart", JSON.stringify(cart));
+        localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
+      }
+
+      let panel = document.getElementById("acceptedPreordersPanel");
+      if (!panel) {
+        panel = document.createElement("section");
+        panel.id = "acceptedPreordersPanel";
+        panel.className = "dashboard-panel";
+        const ordersSection = document.getElementById("orders");
+        if (ordersSection?.parentNode) ordersSection.parentNode.insertBefore(panel, ordersSection);
+      }
+      panel.replaceChildren();
+      const heading = document.createElement("h2");
+      heading.textContent = "Accepted pre-orders";
+      panel.append(heading);
+      if (!accepted.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "Accepted pre-orders will appear here when a restaurant agrees to prepare a requested dish.";
+        panel.append(empty);
+        return;
+      }
+      accepted.forEach(request => {
+        const itemId = Number(request.accepted_menu_item_id);
+        const food = menu.find(item => Number(item.id) === itemId);
+        const card = document.createElement("article");
+        card.className = "order-history-card";
+        const title = document.createElement("h3");
+        title.textContent = food?.name || request.dish_name || "Accepted dish";
+        const details = document.createElement("p");
+        details.textContent = "Quantity: " + Number(request.quantity) + (food ? " · Price per item: ₦" + Number(food.price).toLocaleString("en-NG") : "");
+        card.append(title, details);
+        const currentlyInBag = cart.some(item => Number(item.id) === itemId);
+        if (currentlyInBag) {
+          const status = document.createElement("p");
+          status.textContent = "This accepted dish is in your bag.";
+          card.append(status);
+        } else {
+          const add = document.createElement("button");
+          add.type = "button";
+          add.className = "btn";
+          add.textContent = "Add accepted dish to bag";
+          add.addEventListener("click", () => {
+            if (!food) {
+              showMessage("This accepted dish is no longer on the available menu. Please contact the restaurant.", true);
+              return;
+            }
+            let currentCart = [];
+            try {
+              currentCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+              if (!Array.isArray(currentCart)) currentCart = [];
+            } catch { currentCart = []; }
+            const existing = currentCart.find(item => Number(item.id) === itemId);
+            if (existing) existing.qty = Number(existing.qty) + Number(request.quantity);
+            else currentCart.push({ id: itemId, qty: Number(request.quantity) });
+            const currentProcessed = new Set(processedSet);
+            currentProcessed.add(String(request.id));
+            localStorage.setItem("jovick-cart", JSON.stringify(currentCart));
+            localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(currentProcessed)));
+            showMessage("Accepted dish added to your bag. Open the menu to review it and complete checkout.");
+            add.disabled = true;
+            add.textContent = "Added to bag";
+          });
+          card.append(add);
+        }
+        const link = document.createElement("a");
+        link.href = "foods.html";
+        link.className = "text-link";
+        link.textContent = "Open menu and checkout";
+        card.append(link);
+        panel.append(card);
+      });
+    } catch (error) {
+      showMessage("Accepted pre-orders could not be synced: " + (error.message || "Please refresh and try again."), true);
+    }
+  }
+
   function showMessage(text, isError = false) {
     message.textContent = text;
     message.hidden = false;
@@ -110,6 +234,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    await syncAcceptedPreorders(currentUser.id);
     await loadOrders(currentUser.id);
 
     const fullName = profile.full_name || "Jovick customer";
