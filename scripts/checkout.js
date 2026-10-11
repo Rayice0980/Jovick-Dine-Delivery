@@ -143,26 +143,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     submitButton.disabled = true; submitButton.setAttribute("aria-busy", "true");
     showNote("Submitting your order securely…");
     try {
-      const { data, error } = await supabase.rpc("place_customer_order", payload);
+      const { data, error } = await supabase.rpc("place_customer_orders", payload);
       if (error) throw error;
-      const order = Array.isArray(data) ? data[0] : data;
-      if (!order?.order_number) throw new Error("We couldn't confirm the order number. Check My Orders before trying again.");
+      const orders = Array.isArray(data) ? data : (data ? [data] : []);
+      if (!orders.length || orders.some(order => !order?.order_number)) {
+        throw new Error("We couldn't confirm all order numbers. Check My Orders before trying again.");
+      }
       localStorage.removeItem("jovick-cart");
       localStorage.removeItem("jovick-menu-cache");
       form.reset();
       const success = document.createElement("div"); success.className = "order-success";
-      const heading = document.createElement("h3"); heading.textContent = "Your order has been received!";
-      const number = document.createElement("p"); number.textContent = "Order number: " + order.order_number;
-      const amount = document.createElement("p"); amount.textContent = "Order total: " + money(order.total);
-      const status = document.createElement("p"); status.textContent = "Status: Awaiting business confirmation. Payment has not been processed.";
+      const heading = document.createElement("h3"); heading.textContent = orders.length > 1 ? "Your orders have been received!" : "Your order has been received!";
+      const amount = document.createElement("p");
+      amount.textContent = "Combined order total: " + money(orders.reduce((sum, order) => sum + Number(order.total || 0), 0));
+      const status = document.createElement("p"); status.textContent = "Each business has its own order to confirm and prepare. Payment has not been processed.";
+      const orderList = document.createElement("ul");
+      orders.forEach(order => {
+        const item = document.createElement("li");
+        item.textContent = (order.restaurant_name || "Business") + " — Order " + order.order_number + " — " + money(order.total) + " — Awaiting confirmation";
+        orderList.append(item);
+      });
       const requestedFor = values.get("requestedFor");
       const schedule = requestedFor ? document.createElement("p") : null;
       if (schedule) schedule.textContent = "Requested time: " + new Date(String(requestedFor)).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
       const link = document.createElement("a"); link.className = "btn"; link.href = "dashboard.html#orders"; link.textContent = "View my orders";
-      success.append(heading, number, amount, status);
+      success.append(heading, amount, status, orderList);
       if (schedule) success.append(schedule);
       success.append(link); summary.replaceChildren(success);
-      showNote("Order saved successfully. You can view it from your customer dashboard.");
+      showNote(orders.length > 1
+        ? "Your checkout succeeded. Separate orders were sent to " + orders.length + " businesses."
+        : "Order saved successfully. You can view it from your customer dashboard.");
     } catch (error) {
       showNote(error.message || "We couldn't place your order. Your cart is still saved; please try again.", true);
     } finally { submitButton.disabled = false; submitButton.removeAttribute("aria-busy"); }
