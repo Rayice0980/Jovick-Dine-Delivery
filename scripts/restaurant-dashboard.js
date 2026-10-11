@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   let ownDishAvailability = [];
   let knownPreorderIds = null;
   let knownOrderIds = null;
+  let menuExpanded = false;
+  let catalogueExpanded = false;
+  let dailyExpanded = false;
 
   const money = (value) => "₦" + Number(value || 0).toLocaleString("en-NG");
   // menu_items currently permits only the categories used by the customer menu filters.
@@ -103,6 +106,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.setInterval(() => { loadOrders().catch(() => {}); }, 30000);
     document.getElementById("catalogueSearch")?.addEventListener("input", renderSharedCatalogue);
     document.getElementById("catalogueCategory")?.addEventListener("change", renderSharedCatalogue);
+    document.getElementById("viewAllCatalogue")?.addEventListener("click", () => {
+      catalogueExpanded = !catalogueExpanded;
+      renderSharedCatalogue();
+    });
+    document.getElementById("dailyAvailabilitySearch")?.addEventListener("input", renderDailyAvailability);
+    document.getElementById("viewAllDaily")?.addEventListener("click", () => {
+      dailyExpanded = !dailyExpanded;
+      renderDailyAvailability();
+    });
+    document.getElementById("menuItemSearch")?.addEventListener("input", () => loadMenu().catch(error => showNotice(error.message, true)));
+    document.getElementById("viewAllMenu")?.addEventListener("click", () => {
+      menuExpanded = !menuExpanded;
+      loadMenu().catch(error => showNotice(error.message, true));
+    });
     document.getElementById("refreshPreorders")?.addEventListener("click", loadPreorderRequests);
     window.setInterval(() => { loadPreorderRequests().catch(() => {}); }, 30000);
   } catch (error) {
@@ -118,13 +135,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("menuCount").textContent = String(menuItems.length);
     document.getElementById("availableCount").textContent = String(menuItems.filter(item => item.is_available).length);
     menuList.replaceChildren();
-    if (!menuItems.length) {
+    const menuTerm = (document.getElementById("menuItemSearch")?.value || "").trim().toLowerCase();
+    const matchingMenuItems = menuItems.filter(item => !menuTerm || (item.name + " " + item.category + " " + (item.description || "")).toLowerCase().includes(menuTerm));
+    if (!matchingMenuItems.length) {
       menuList.append(safeElement("p", "empty-state", "No restaurant-specific dishes yet. Use the form above to add your first menu item."));
       return;
     }
     // Catalogue-backed everyday dishes are managed only in Daily Availability.
-    const everydayItems = menuItems.filter(item => item.menu_type === "everyday" && !(item.slug || "").startsWith("catalog-"));
-    const specialItems = menuItems.filter(item => item.menu_type !== "everyday");
+    const everydayItems = matchingMenuItems.filter(item => item.menu_type === "everyday" && !(item.slug || "").startsWith("catalog-"));
+    const specialItems = matchingMenuItems.filter(item => item.menu_type !== "everyday");
     function addMenuSection(title, description, items) {
       const heading = safeElement("div", "menu-section-heading");
       heading.append(safeElement("h3", "", title), safeElement("p", "", description));
@@ -133,7 +152,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         menuList.append(safeElement("p", "menu-section-empty", "No dishes in this section yet."));
         return;
       }
-      items.forEach(item => {
+      const visibleItems = menuExpanded || menuTerm ? items : items.slice(0, 4);
+      visibleItems.forEach(item => {
       const card = safeElement("article", "managed-menu-card");
       const top = safeElement("div", "managed-menu-top");
       const copy = document.createElement("div");
@@ -227,6 +247,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     addMenuSection("Everyday menu", "Your regular dishes customers can order whenever they are available.", everydayItems);
     addMenuSection("Special menu", "Extra dishes you add for selected days or occasions.", specialItems);
+    const menuToggle = document.getElementById("viewAllMenu");
+    if (menuToggle) {
+      const hasMore = !menuTerm && (everydayItems.length > 4 || specialItems.length > 4);
+      menuToggle.hidden = !hasMore;
+      menuToggle.textContent = menuExpanded ? "Show less" : "View all menu items";
+    }
   }
 
   async function loadSharedCatalogue() {
@@ -256,11 +282,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         && (!term || (dish.name + " " + dish.category).toLowerCase().includes(term));
     });
     root.replaceChildren();
+    const catalogueToggle = document.getElementById("viewAllCatalogue");
+    if (catalogueToggle) {
+      catalogueToggle.hidden = filtered.length <= 6 || Boolean(term);
+      catalogueToggle.textContent = catalogueExpanded ? "Show less" : "View all dishes";
+    }
+    const visibleDishes = catalogueExpanded || term ? filtered : filtered.slice(0, 6);
     if (!filtered.length) {
       root.append(safeElement("p", "empty-state", "No new dishes match that search. Your saved everyday dishes are in Daily Availability below."));
       return;
     }
-    filtered.forEach(dish => {
+    visibleDishes.forEach(dish => {
       const saved = ownDishAvailability.find(row => Number(row.dish_id) === Number(dish.id));
       const row = safeElement("article", "shared-dish-row");
       const info = safeElement("div", "shared-dish-info");
@@ -321,17 +353,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderDailyAvailability() {
     const root = document.getElementById("dailyAvailabilityList");
     if (!root) return;
+    const dailyTerm = (document.getElementById("dailyAvailabilitySearch")?.value || "").trim().toLowerCase();
     const dailyDishes = ownDishAvailability
       .filter(row => row.menu_type === "everyday")
       .map(row => ({ availability: row, dish: sharedDishes.find(item => Number(item.id) === Number(row.dish_id)) }))
-      .filter(item => item.dish)
+      .filter(item => item.dish && (!dailyTerm || (item.dish.name + " " + item.dish.category).toLowerCase().includes(dailyTerm)))
       .sort((a, b) => a.dish.name.localeCompare(b.dish.name));
     root.replaceChildren();
+    const dailyToggle = document.getElementById("viewAllDaily");
+    if (dailyToggle) {
+      dailyToggle.hidden = dailyDishes.length <= 6 || Boolean(dailyTerm);
+      dailyToggle.textContent = dailyExpanded ? "Show less" : "View all dishes";
+    }
+    const visibleDailyDishes = dailyExpanded || dailyTerm ? dailyDishes : dailyDishes.slice(0, 6);
     if (!dailyDishes.length) {
       root.append(safeElement("p", "empty-state", "You haven't saved any everyday dishes yet. Choose a dish above and set its menu type to Everyday."));
       return;
     }
-    dailyDishes.forEach(({ availability, dish }) => {
+    visibleDailyDishes.forEach(({ availability, dish }) => {
       const card = safeElement("article", "daily-availability-card" + (availability.is_available ? " is-available" : " is-finished"));
       const details = safeElement("div", "daily-availability-details");
       details.append(

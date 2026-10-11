@@ -28,10 +28,12 @@
         <section class="restaurant-panel" id="sharedCatalogue">
           <div class="panel-heading"><div><span class="eyebrow">Shared catalogue</span><h2>Today’s food availability</h2><p>Browse the full Jovick dish list, set your price, and tick every dish you can prepare today. Untick dishes that are sold out.</p></div><span class="panel-emoji" aria-hidden="true">☑️</span></div>
           <div class="catalogue-tools"><input id="catalogueSearch" type="search" placeholder="Search all dishes…" aria-label="Search shared food catalogue" /><select id="catalogueCategory" aria-label="Filter dishes by category"><option value="All">All categories</option><option>Rice</option><option>Everyday</option><option>Pasta</option><option>Noodles</option><option>Swallow</option><option>Soups</option><option>Proteins</option><option>Grills</option><option>Snacks</option><option>Sides</option></select></div>
+          <div class="list-tools"><span class="list-hint">Showing a short list first. Search to find a specific dish.</span><button type="button" class="btn btn-muted list-toggle" id="viewAllCatalogue" hidden>View all dishes</button></div>
           <div id="sharedDishCatalogue" class="shared-dish-catalogue" aria-live="polite"><p class="loading-copy">Loading shared dish catalogue…</p></div>
         </section>
         <section class="restaurant-panel" id="dailyAvailability">
           <div class="panel-heading"><div><span class="eyebrow">Your saved everyday dishes</span><h2>Daily Availability</h2><p>Your saved everyday dishes live here. Tap once to mark a dish available or finished; your saved price stays the same.</p></div><span class="panel-emoji" aria-hidden="true">🟢</span></div>
+          <div class="list-tools"><input id="dailyAvailabilitySearch" type="search" placeholder="Search your daily dishes…" aria-label="Search daily availability dishes" /><button type="button" class="btn btn-muted list-toggle" id="viewAllDaily" hidden>View all dishes</button></div>
           <div id="dailyAvailabilityList" class="daily-availability-list" aria-live="polite"><p class="loading-copy">Loading your everyday dishes…</p></div>
         </section>
         <section class="restaurant-panel" id="preorderRequests">
@@ -52,6 +54,7 @@
             </div>
             <div class="menu-form-footer"><p id="menuFeedback" role="status" aria-live="polite"></p><div><button type="button" class="btn btn-muted" id="cancelEditButton" hidden>Cancel edit</button><button type="submit" class="btn" id="saveMenuButton">Add menu item ↗</button></div></div>
           </form>
+          <div class="list-tools"><input id="menuItemSearch" type="search" placeholder="Search your menu by dish name…" aria-label="Search your restaurant menu" /><button type="button" class="btn btn-muted list-toggle" id="viewAllMenu" hidden>View all menu items</button></div>
           <div id="menuList" class="managed-menu-list" aria-live="polite"><p class="loading-copy">Loading your menu…</p></div>
         </section>
         <section class="restaurant-panel" id="incomingOrders">
