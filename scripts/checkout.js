@@ -73,19 +73,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("checkoutEmail").value = user.email || "";
     menuItems = new Map(menuResult.data.map((food) => [Number(food.id), { name: food.name, price: Number(food.price) }]));
 
-    // Keep accepted pre-orders available in checkout even if the customer opens checkout directly.
+    // Pull only this customer's accepted requests so the agreed dishes appear in their bag on any device.
     const { data: acceptedRequests, error: acceptedRequestsError } = await supabase
       .from("dish_preorder_requests")
-      .select("id,accepted_menu_item_id,quantity")
+      .select("id,customer_id,accepted_menu_item_id,quantity")
+      .eq("customer_id", user.id)
       .eq("status", "accepted")
       .not("accepted_menu_item_id", "is", null);
     if (acceptedRequestsError) throw acceptedRequestsError;
+    const userStorageKey = "jovick-accepted-preorder-ids:" + user.id;
     let processed = [];
     let savedCart = [];
     try {
-      processed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+      const userProcessed = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
+      const legacyProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+      processed = [...new Set([...(Array.isArray(userProcessed) ? userProcessed : []), ...(Array.isArray(legacyProcessed) ? legacyProcessed : [])].map(String))];
       savedCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
-      if (!Array.isArray(processed)) processed = [];
       if (!Array.isArray(savedCart)) savedCart = [];
     } catch {
       processed = [];
@@ -106,7 +109,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (cartChanged) {
       localStorage.setItem("jovick-cart", JSON.stringify(savedCart));
+      localStorage.setItem(userStorageKey, JSON.stringify(Array.from(processedSet)));
       localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
+      window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
     }
 
     const requestedFor = document.getElementById("requestedFor");
