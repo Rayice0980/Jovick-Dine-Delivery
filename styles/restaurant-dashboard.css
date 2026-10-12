@@ -642,3 +642,34 @@ body[data-page="restaurant-dashboard"] {
   font-size: 13px;
   white-space: pre-wrap;
 }
+
+
+.restaurant-notification { position: relative; display: inline-flex; }
+.restaurant-notification-button {
+  position: relative; display: inline-grid; place-items: center; width: 42px; height: 42px;
+  border: 1px solid var(--rd-line); border-radius: 50%; background: #fff; color: var(--rd-dark);
+  font-size: 23px; cursor: pointer;
+}
+.restaurant-notification-button:hover { background: var(--rd-soft); }
+.restaurant-notification-dot {
+  position: absolute; top: 5px; right: 5px; width: 10px; height: 10px;
+  border: 2px solid #fff; border-radius: 50%; background: #e33131;
+}
+.restaurant-notification-dropdown {
+  position: absolute; z-index: 1000; top: calc(100% + 10px); right: 0; width: min(350px, calc(100vw - 28px));
+  max-height: 390px; overflow-y: auto; padding: 8px; border: 1px solid var(--rd-line);
+  border-radius: 14px; background: #fff; box-shadow: 0 16px 45px #10261924;
+}
+.restaurant-notification-dropdown[hidden], .restaurant-notification-dot[hidden] { display: none; }
+.restaurant-notification-heading { padding: 10px 11px; font-size: .9rem; font-weight: 800; color: var(--rd-dark); }
+.restaurant-notification-item {
+  display: grid; gap: 5px; width: 100%; padding: 11px; text-align: left; border: 0; border-radius: 9px;
+  background: #fff; cursor: pointer; color: #26372b;
+}
+.restaurant-notification-item:hover { background: var(--rd-soft); }
+.restaurant-notification-item.is-unread { background: #fff4f3; }
+.restaurant-notification-item strong { font-size: .86rem; }
+.restaurant-notification-item span, .restaurant-notification-empty { margin: 0; color: var(--rd-muted); font-size: .75rem; line-height: 1.45; }
+@media (max-width: 520px) {
+  .restaurant-notification-dropdown { right: -50px; }
+}
