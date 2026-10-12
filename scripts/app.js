@@ -182,10 +182,13 @@ function closeCart() {
 }
 function boot() {
   const root = document.getElementById("siteHeader");
-  if (root) root.innerHTML = header();
+  if (root) {
+    root.innerHTML = header();
+    if (page === "restaurant-dashboard") root.querySelector("[data-cart-open]")?.remove();
+  }
   const foot = document.getElementById("siteFooter");
   if (foot) foot.innerHTML = footer();
-  if (!document.getElementById("cartDrawer"))
+  if (page !== "restaurant-dashboard" && !document.getElementById("cartDrawer"))
     document.body.insertAdjacentHTML("beforeend", drawer());
   renderCart();
   document.getElementById("menuToggle")?.addEventListener("click", () => {
@@ -235,7 +238,7 @@ function boot() {
     if (note) note.textContent = msg;
     form.reset();
   });
-  if (new URLSearchParams(location.search).get("checkout") === "1")
+  if (page !== "restaurant-dashboard" && new URLSearchParams(location.search).get("checkout") === "1")
     setTimeout(openCart, 250);
 }
 window.jovickSetMenu = function (items) {
