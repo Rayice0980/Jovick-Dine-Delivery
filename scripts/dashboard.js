@@ -121,25 +121,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function syncAcceptedPreorders(customerId) {
     try {
-      const { data: requests, error: requestError } = await supabase.from("dish_preorder_requests")
-        .select("id,dish_name,quantity,accepted_price,accepted_restaurant_id,status,accepted_at")
-        .eq("customer_id", customerId).in("status", ["accepted", "ordered"]).order("accepted_at", { ascending: false });
+      const { data: requests, error: requestError } = await supabase.rpc("get_my_preorder_bag");
       if (requestError) throw requestError;
       const allRequests = requests || [];
-      const restaurantIds = [...new Set(allRequests.map((request) => request.accepted_restaurant_id).filter(Boolean))];
-      let restaurantsById = new Map();
-      if (restaurantIds.length) {
-        const { data, error } = await supabase.from("restaurants").select("id,name").in("id", restaurantIds);
-        if (error) throw error;
-        restaurantsById = new Map((data || []).map((restaurant) => [restaurant.id, restaurant.name]));
-      }
       let cart = [];
       try { const parsed = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); cart = Array.isArray(parsed) ? parsed : []; } catch { cart = []; }
-      const orderedIds = new Set(allRequests.filter((request) => request.status === "ordered").map((request) => String(request.id)));
+      const orderedIds = new Set(allRequests.filter((request) => request.status === "ordered").map((request) => String(request.request_id)));
       cart = cart.filter((item) => !item.preorderRequestId || !orderedIds.has(String(item.preorderRequestId)));
       allRequests.filter((request) => request.status === "accepted" && Number(request.accepted_price) > 0).forEach((request) => {
-        const requestId = String(request.id);
-        const privateItem = { id: "preorder:" + requestId, preorderRequestId: requestId, qty: Number(request.quantity), name: request.dish_name, price: Number(request.accepted_price), restaurantId: request.accepted_restaurant_id, restaurantName: restaurantsById.get(request.accepted_restaurant_id) || "Accepting business" };
+        const requestId = String(request.request_id);
+        const privateItem = { id: "preorder:" + requestId, preorderRequestId: requestId, qty: Number(request.quantity), name: request.dish_name, price: Number(request.accepted_price), restaurantId: request.accepted_restaurant_id, restaurantName: request.restaurant_name || "Accepting business" };
         if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
         const existing = cart.find((item) => String(item.preorderRequestId || "") === requestId);
         if (existing) Object.assign(existing, privateItem); else cart.push(privateItem);
@@ -164,7 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const card = document.createElement("article"); card.className = "order-history-card";
         const title = document.createElement("h3"); title.textContent = request.dish_name || "Accepted dish";
         const details = document.createElement("p"); details.textContent = "Quantity: " + request.quantity + " · Price per item: ₦" + Number(request.accepted_price).toLocaleString("en-NG");
-        const business = document.createElement("p"); business.textContent = "Accepted by: " + (restaurantsById.get(request.accepted_restaurant_id) || "Business");
+        const business = document.createElement("p"); business.textContent = "Accepted by: " + (request.restaurant_name || "Business");
         const note = document.createElement("p"); note.textContent = "This dish is private to you and the accepting business; it is not listed on the public menu.";
         const link = document.createElement("a"); link.href = "checkout.html"; link.className = "btn"; link.textContent = "Review bag and check out";
         card.append(title, details, business, note, link); panel.append(card);
