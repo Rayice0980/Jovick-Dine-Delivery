@@ -611,3 +611,18 @@
   color: #a13b2a;
   font-size: 13px;
 }
+
+
+.order-received-button { margin-top: 10px; }
+.order-rating-form {
+  display: grid; gap: 12px; margin-top: 10px; padding: 14px; background: #f4f8f2;
+  border: 1px solid var(--line); border-radius: 12px;
+}
+.order-rating-form label { display: grid; gap: 7px; font-size: 13px; font-weight: 800; }
+.order-rating-form select {
+  width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line);
+  border-radius: 9px; background: #fff; color: var(--ink); font: inherit;
+}
+.order-rating-form .btn { justify-self: start; }
+.order-rating-error { margin: 0; color: #a13b2a; font-size: 13px; }
+.order-rating-saved { margin: 10px 0 0; color: var(--green); font-size: 13px; font-weight: 800; }
