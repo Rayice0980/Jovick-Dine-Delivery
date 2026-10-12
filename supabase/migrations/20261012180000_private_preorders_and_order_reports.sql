@@ -195,7 +195,7 @@ begin
     left join public.menu_items m on not (e.value ? 'preorder_request_id') and m.id = (e.value->>'id')::bigint
     left join public.dish_preorder_requests d on e.value ? 'preorder_request_id'
       and d.id = (e.value->>'preorder_request_id')::uuid and d.customer_id = v_customer_id
-    where coalesce(d.accepted_restaurant_id, m.restaurant_id) = v_restaurant.id;
+    where coalesce(d.accepted_restaurant_id, m.restaurant_id) = v_restaurant.restaurant_id;
     if v_subtotal <= 0 then raise exception 'An order total is invalid.'; end if;
 
     insert into public.orders (
@@ -215,7 +215,7 @@ begin
           into v_item_restaurant_id, v_name, v_price, v_quantity
         from public.dish_preorder_requests d
         where d.id = v_request_id and d.customer_id = v_customer_id
-          and d.status = 'accepted' and d.accepted_restaurant_id = v_restaurant.id
+          and d.status = 'accepted' and d.accepted_restaurant_id = v_restaurant.restaurant_id
         for update;
         if not found then raise exception 'An accepted pre-order changed while checking out. Please refresh and try again.'; end if;
         v_line_total := v_price * v_quantity;
@@ -228,14 +228,14 @@ begin
         v_quantity := (v_item->>'qty')::integer;
         select m.restaurant_id, m.name, m.price into v_item_restaurant_id, v_name, v_price
         from public.menu_items m
-        where m.id = v_menu_id and m.restaurant_id = v_restaurant.id and m.is_available = true;
+        where m.id = v_menu_id and m.restaurant_id = v_restaurant.restaurant_id and m.is_available = true;
         if not found then raise exception 'A meal became unavailable during checkout. Please refresh and try again.'; end if;
         v_line_total := v_price * v_quantity;
         insert into public.order_items (order_id, menu_item_id, item_name, unit_price, quantity, line_total, restaurant_id, preorder_request_id)
         values (v_order_id, v_menu_id, v_name, v_price, v_quantity, v_line_total, v_item_restaurant_id, null);
       end if;
     end loop;
-    return query select v_order_id, v_order_number, v_subtotal, 0, v_subtotal, 'received'::text, v_restaurant.id, v_restaurant.name;
+    return query select v_order_id, v_order_number, v_subtotal, 0, v_subtotal, 'received'::text, v_restaurant.restaurant_id, v_restaurant.name;
   end loop;
 end;
 $function$;
