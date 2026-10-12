@@ -487,9 +487,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const refresh = document.getElementById("refreshPreorders");
     if (refresh) refresh.disabled = true;
     try {
-      const { data, error } = await supabase.from("dish_preorder_requests")
-        .select("id,dish_name,quantity,requested_for,notes,delivery_area,created_at")
-        .eq("status", "pending").order("created_at", { ascending: true }).limit(100);
+      const { data, error } = await supabase.rpc("get_open_preorder_requests");
       if (error) throw error;
       notificationPreorders = data || [];
       renderRestaurantNotifications();
@@ -510,8 +508,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         head.append(safeElement("h3", "", request.dish_name), safeElement("span", "order-status-pill", "Open request"));
         card.append(head, safeElement("p", "order-meta", "Quantity: " + request.quantity + " · Requested " + new Date(request.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
         if (request.requested_for) card.append(safeElement("p", "order-meta", "Needed by: " + new Date(request.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
-        if (request.delivery_area) card.append(safeElement("p", "order-meta", "Delivery area: " + request.delivery_area));
-        if (request.notes) card.append(safeElement("p", "order-meta", "Customer note: " + request.notes));
         const priceLabel = safeElement("label", "preorder-accept-price", "Your price per item (₦)");
         const priceInput = document.createElement("input");
         priceInput.type = "number";
