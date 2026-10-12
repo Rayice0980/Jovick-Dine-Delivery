@@ -1314,3 +1314,29 @@ p {
 @media (max-width: 480px) {
   .preorder-dish-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Compact customer catalogue: show a manageable selection before expanding. */
+.preorder-catalogue-listbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 10px 0 16px;
+}
+.preorder-catalogue-listbar .menu-results {
+  margin: 0;
+}
+.preorder-catalogue-listbar button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .preorder-catalogue-listbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .preorder-catalogue-listbar button {
+    width: 100%;
+  }
+}

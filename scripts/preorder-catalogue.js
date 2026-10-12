@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!root || !supabaseConfigured || !supabase) return;
   let dishes = [];
   let availableByDish = new Map();
+  let showAllDishes = false;
+  const count = document.getElementById("preorderCatalogueCount");
+  const viewAllButton = document.getElementById("viewAllPreorderDishes");
 
   const el = (tag, cls, text) => {
     const node = document.createElement(tag);
@@ -42,7 +45,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   search?.addEventListener("input", render);
-  category?.addEventListener("change", render);
+  category?.addEventListener("change", () => { showAllDishes = false; render(); });
+  viewAllButton?.addEventListener("click", () => {
+    showAllDishes = !showAllDishes;
+    render();
+  });
 
   function render() {
     const term = (search?.value || "").trim().toLowerCase();
@@ -52,11 +59,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       (!term || (dish.name + " " + dish.category + " " + dish.description).toLowerCase().includes(term))
     );
     root.replaceChildren();
+    const hasActiveFilter = Boolean(term) || selectedCategory !== "All";
+    const displayed = showAllDishes || hasActiveFilter ? visible : visible.slice(0, 6);
+    if (count) count.textContent = hasActiveFilter || displayed.length === visible.length
+      ? (visible.length === 1 ? "Showing 1 dish" : "Showing " + visible.length + " dishes")
+      : "Showing " + displayed.length + " of " + visible.length + " dishes";
+    if (viewAllButton) {
+      viewAllButton.hidden = visible.length <= 6 || hasActiveFilter;
+      viewAllButton.textContent = showAllDishes ? "Show less" : "View all dishes";
+    }
     if (!visible.length) {
       root.append(el("p", "form-note", "No dishes match your search."));
       return;
     }
-    visible.forEach(dish => {
+    displayed.forEach(dish => {
       const availability = availableByDish.get(Number(dish.id));
       const card = el("article", "preorder-dish-card");
       card.append(el("span", "preorder-dish-category", dish.category), el("h3", "", dish.name));
