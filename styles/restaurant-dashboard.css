@@ -671,5 +671,45 @@ body[data-page="restaurant-dashboard"] {
 .restaurant-notification-item strong { font-size: .86rem; }
 .restaurant-notification-item span, .restaurant-notification-empty { margin: 0; color: var(--rd-muted); font-size: .75rem; line-height: 1.45; }
 @media (max-width: 520px) {
-  .restaurant-notification-dropdown { right: -50px; }
+  .restaurant-notification {
+    position: static;
+  }
+
+  .restaurant-notification-dropdown {
+    position: fixed;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 88px - env(safe-area-inset-top, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px;
+    border-radius: 16px;
+    box-sizing: border-box;
+    z-index: 2000;
+  }
+
+  .restaurant-notification-heading {
+    padding: 12px 10px;
+    font-size: 1rem;
+  }
+
+  .restaurant-notification-item {
+    gap: 7px;
+    padding: 13px 11px;
+    border-radius: 11px;
+  }
+
+  .restaurant-notification-item strong {
+    font-size: .9rem;
+    line-height: 1.35;
+  }
+
+  .restaurant-notification-item span,
+  .restaurant-notification-empty {
+    font-size: .8rem;
+    line-height: 1.5;
+  }
 }
