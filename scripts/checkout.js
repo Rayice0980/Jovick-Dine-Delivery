@@ -88,27 +88,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function syncAcceptedPreordersInBag(customerId) {
-    const { data: requestResult, error: requestError } = await supabase
-      .from("dish_preorder_requests")
-      .select("id,dish_name,quantity,accepted_price,accepted_restaurant_id,status")
-      .eq("customer_id", customerId)
-      .in("status", ["accepted", "ordered"]);
+    const { data: requestResult, error: requestError } = await supabase.rpc("get_my_preorder_bag");
     if (requestError) throw requestError;
     const requests = requestResult || [];
-    const restaurantIds = [...new Set(requests.map((request) => request.accepted_restaurant_id).filter(Boolean))];
-    let restaurantsById = new Map();
-    if (restaurantIds.length) {
-      const { data, error } = await supabase.from("restaurants").select("id,name").in("id", restaurantIds);
-      if (error) throw error;
-      restaurantsById = new Map((data || []).map((restaurant) => [restaurant.id, restaurant.name]));
-    }
     let savedCart = [];
     try { const parsed = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); savedCart = Array.isArray(parsed) ? parsed : []; } catch { savedCart = []; }
-    const orderedIds = new Set(requests.filter((request) => request.status === "ordered").map((request) => String(request.id)));
+    const orderedIds = new Set(requests.filter((request) => request.status === "ordered").map((request) => String(request.request_id)));
     savedCart = savedCart.filter((item) => !item.preorderRequestId || !orderedIds.has(String(item.preorderRequestId)));
     requests.filter((request) => request.status === "accepted" && Number(request.accepted_price) > 0).forEach((request) => {
-      const requestId = String(request.id);
-      const privateItem = { id: "preorder:" + requestId, preorderRequestId: requestId, qty: Number(request.quantity), name: request.dish_name, price: Number(request.accepted_price), restaurantId: request.accepted_restaurant_id, restaurantName: restaurantsById.get(request.accepted_restaurant_id) || "Accepting business" };
+      const requestId = String(request.request_id);
+      const privateItem = { id: "preorder:" + requestId, preorderRequestId: requestId, qty: Number(request.quantity), name: request.dish_name, price: Number(request.accepted_price), restaurantId: request.accepted_restaurant_id, restaurantName: request.restaurant_name || "Accepting business" };
       if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
       const existing = savedCart.find((item) => String(item.preorderRequestId || "") === requestId);
       if (existing) Object.assign(existing, privateItem); else savedCart.push(privateItem);
@@ -117,7 +106,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
     return savedCart;
   }
-
   async function refreshAcceptedPreordersInCheckout() {
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
