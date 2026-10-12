@@ -512,7 +512,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let lines = [];
     if (orderIds.length) {
       const { data, error: linesError } = await supabase.from("order_items")
-        .select("order_id,item_name,quantity,unit_price,line_total,menu_item_id").in("order_id", orderIds);
+        .select("order_id,item_name,quantity,unit_price,line_total,menu_item_id,restaurant_id,preorder_request_id").in("order_id", orderIds);
       if (linesError) throw linesError;
       lines = data || [];
     }
@@ -522,7 +522,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ordersList.append(safeElement("p", "empty-state", "No incoming orders yet. Orders for your restaurant will appear here."));
       return;
     }
-    const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => menuItems.some(item => String(item.id) === String(line.menu_item_id))); });
+    const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => String(line.restaurant_id || "") === String(restaurant.id)); });
     const currentOrderIds = new Set(availableOrders.map(order => String(order.id)));
     if (knownOrderIds) {
       const incoming = availableOrders.filter(order => !knownOrderIds.has(String(order.id)));
