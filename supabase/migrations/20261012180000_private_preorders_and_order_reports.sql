@@ -6,6 +6,12 @@ alter table public.dish_preorder_requests
   add constraint dish_preorder_requests_accepted_price_check
   check (accepted_price is null or accepted_price > 0);
 
+alter table public.dish_preorder_requests
+  drop constraint if exists dish_preorder_requests_status_check;
+alter table public.dish_preorder_requests
+  add constraint dish_preorder_requests_status_check
+  check (status in ('pending','accepted','ordered','cancelled'));
+
 alter table public.order_items
   add column if not exists restaurant_id uuid references public.restaurants(id) on delete set null;
 alter table public.order_items
