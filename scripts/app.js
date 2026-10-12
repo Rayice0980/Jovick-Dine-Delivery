@@ -51,11 +51,13 @@ function foodCard(f) {
     f.tag +
     '</span></div><div class="food-body"><div class="food-title-row"><h3>' +
     f.name +
-    '</h3><span class="food-rating">★ ' +
-    f.rating +
+    '</h3><span class="food-rating">' +
+    (f.rating === "New" ? "New" : "★ " + f.rating) +
     '</span></div><p class="food-description">' +
     f.desc +
-    '</p><div class="food-bottom"><span class="price">' +
+    '</p>' +
+    (f.restaurantName ? '<p class="food-restaurant-name">By ' + f.restaurantName + '</p>' : '') +
+    '<div class="food-bottom"><span class="price">' +
     money(f.price) +
     '</span><button class="add-btn" data-add="' +
     f.id +
