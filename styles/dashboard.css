@@ -558,3 +558,56 @@
     flex-direction: column;
   }
 }
+
+
+.order-report-area {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.order-report-button {
+  min-height: 40px;
+}
+.order-report-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 14px;
+  background: #faf8f3;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.order-report-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.order-report-form select,
+.order-report-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+.order-report-form textarea {
+  resize: vertical;
+}
+.order-report-form .btn {
+  justify-self: start;
+}
+.order-report-status {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.order-report-error {
+  margin: 0;
+  color: #a13b2a;
+  font-size: 13px;
+}
