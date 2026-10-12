@@ -625,3 +625,20 @@ body[data-page="restaurant-dashboard"] {
     width: 100%;
   }
 }
+
+
+.order-report-alert {
+  display: block;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff0ed;
+  color: #9d3328;
+  font-size: 13px;
+}
+.order-report-details {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
