@@ -28,22 +28,8 @@ async function refreshMenuAndAcceptedPreorders() {
     if (profileError) throw profileError;
     if (profile?.account_type !== "customer") return;
 
-    const { data: requests, error: requestsError } = await supabase
-      .from("dish_preorder_requests")
-      .select("id,dish_name,quantity,accepted_price,accepted_restaurant_id,status")
-      .eq("customer_id", user.id)
-      .in("status", ["accepted", "ordered"]);
+    const { data: requests, error: requestsError } = await supabase.rpc("get_my_preorder_bag");
     if (requestsError) throw requestsError;
-
-    const restaurantIds = [...new Set((requests || []).map((request) => request.accepted_restaurant_id).filter(Boolean))];
-    let restaurantsById = new Map();
-    if (restaurantIds.length) {
-      const { data: restaurants, error: restaurantsError } = await supabase
-        .from("restaurants").select("id,name").in("id", restaurantIds);
-      if (restaurantsError) throw restaurantsError;
-      restaurantsById = new Map((restaurants || []).map((restaurant) => [restaurant.id, restaurant.name]));
-    }
-
     let cart = [];
     try {
       const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
@@ -51,14 +37,12 @@ async function refreshMenuAndAcceptedPreorders() {
     } catch {
       cart = [];
     }
-    const requestById = new Map((requests || []).map((request) => [String(request.id), request]));
-    const orderedIds = new Set((requests || []).filter((request) => request.status === "ordered").map((request) => String(request.id)));
+    const orderedIds = new Set((requests || []).filter((request) => request.status === "ordered").map((request) => String(request.request_id)));
     const before = JSON.stringify(cart);
     cart = cart.filter((item) => !item.preorderRequestId || !orderedIds.has(String(item.preorderRequestId)));
 
     (requests || []).filter((request) => request.status === "accepted" && Number(request.accepted_price) > 0).forEach((request) => {
-      const requestId = String(request.id);
-      const existing = cart.find((item) => String(item.preorderRequestId || "") === requestId);
+      const requestId = String(request.request_id);
       const privateItem = {
         id: "preorder:" + requestId,
         preorderRequestId: requestId,
@@ -66,9 +50,10 @@ async function refreshMenuAndAcceptedPreorders() {
         name: request.dish_name,
         price: Number(request.accepted_price),
         restaurantId: request.accepted_restaurant_id,
-        restaurantName: restaurantsById.get(request.accepted_restaurant_id) || "Accepting business"
+        restaurantName: request.restaurant_name || "Accepting business"
       };
       if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
+      const existing = cart.find((item) => String(item.preorderRequestId || "") === requestId);
       if (existing) Object.assign(existing, privateItem);
       else cart.push(privateItem);
     });
