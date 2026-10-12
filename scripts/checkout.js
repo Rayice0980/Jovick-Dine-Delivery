@@ -73,19 +73,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("checkoutEmail").value = user.email || "";
     menuItems = new Map(menuResult.data.map((food) => [Number(food.id), { name: food.name, price: Number(food.price) }]));
 
-    // Keep accepted pre-orders available in checkout even if the customer opens checkout directly.
+    // Pull only this customer's accepted requests so the agreed dishes appear in their bag on any device.
     const { data: acceptedRequests, error: acceptedRequestsError } = await supabase
       .from("dish_preorder_requests")
-      .select("id,accepted_menu_item_id,quantity")
+      .select("id,customer_id,accepted_menu_item_id,quantity")
+      .eq("customer_id", user.id)
       .eq("status", "accepted")
       .not("accepted_menu_item_id", "is", null);
     if (acceptedRequestsError) throw acceptedRequestsError;
+    const userStorageKey = "jovick-accepted-preorder-ids:" + user.id;
     let processed = [];
     let savedCart = [];
     try {
-      processed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+      const userProcessed = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
+      const legacyProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+      processed = [...new Set([...(Array.isArray(userProcessed) ? userProcessed : []), ...(Array.isArray(legacyProcessed) ? legacyProcessed : [])].map(String))];
       savedCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
-      if (!Array.isArray(processed)) processed = [];
       if (!Array.isArray(savedCart)) savedCart = [];
     } catch {
       processed = [];
@@ -106,7 +109,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (cartChanged) {
       localStorage.setItem("jovick-cart", JSON.stringify(savedCart));
+      localStorage.setItem(userStorageKey, JSON.stringify(Array.from(processedSet)));
       localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
+      window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
     }
 
     const requestedFor = document.getElementById("requestedFor");
@@ -120,6 +125,73 @@ document.addEventListener("DOMContentLoaded", async () => {
     showNote(error.message || "We couldn't prepare checkout. Please refresh and try again.", true);
     submitButton.disabled = true; return;
   }
+
+  async function refreshAcceptedPreordersInCheckout() {
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const user = sessionData.session?.user;
+      if (!user) return;
+
+      const [menuResult, requestResult] = await Promise.all([
+        supabase.rpc("get_public_available_menu"),
+        supabase.from("dish_preorder_requests")
+          .select("id,accepted_menu_item_id,quantity")
+          .eq("customer_id", user.id)
+          .eq("status", "accepted")
+          .not("accepted_menu_item_id", "is", null)
+      ]);
+      if (menuResult.error) throw menuResult.error;
+      if (requestResult.error) throw requestResult.error;
+      menuItems = new Map((menuResult.data || []).map((food) => [
+        Number(food.id), { name: food.name, price: Number(food.price) }
+      ]));
+
+      const userStorageKey = "jovick-accepted-preorder-ids:" + user.id;
+      let processed = [];
+      let savedCart = [];
+      try {
+        const userProcessed = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
+        const legacyProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+        processed = [...new Set([...(Array.isArray(userProcessed) ? userProcessed : []), ...(Array.isArray(legacyProcessed) ? legacyProcessed : [])].map(String))];
+        savedCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+        if (!Array.isArray(savedCart)) savedCart = [];
+      } catch {
+        processed = [];
+        savedCart = [];
+      }
+
+      const processedSet = new Set(processed);
+      let changed = false;
+      (requestResult.data || []).forEach((request) => {
+        const requestId = String(request.id);
+        const itemId = Number(request.accepted_menu_item_id);
+        const quantity = Number(request.quantity);
+        if (processedSet.has(requestId) || !menuItems.has(itemId) || !Number.isInteger(quantity) || quantity < 1) return;
+        const existing = savedCart.find((item) => Number(item.id) === itemId);
+        if (existing) existing.qty = Number(existing.qty) + quantity;
+        else savedCart.push({ id: itemId, qty: quantity });
+        processedSet.add(requestId);
+        changed = true;
+      });
+
+      if (changed) {
+        localStorage.setItem("jovick-cart", JSON.stringify(savedCart));
+        localStorage.setItem(userStorageKey, JSON.stringify(Array.from(processedSet)));
+        localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
+        window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
+        renderSummary(menuItems);
+        showNote("A restaurant accepted your pre-order. The agreed dish has been added to your bag.");
+      }
+    } catch (error) {
+      console.error("Accepted pre-orders could not be refreshed during checkout.", error);
+    }
+  }
+
+  window.setInterval(() => {
+    if (document.visibilityState === "visible") refreshAcceptedPreordersInCheckout();
+  }, 30000);
+  window.addEventListener("focus", refreshAcceptedPreordersInCheckout);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -148,6 +220,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       const orders = Array.isArray(data) ? data : (data ? [data] : []);
       if (!orders.length || orders.some(order => !order?.order_number)) {
         throw new Error("We couldn't confirm all order numbers. Check My Orders before trying again.");
+      }
+      // Mark accepted pre-orders as ordered only after checkout has succeeded, so they do not reappear in the bag.
+      try {
+        const { error: preorderStatusError } = await supabase.rpc("mark_accepted_preorders_ordered", {
+          p_menu_item_ids: items.map((item) => Number(item.id))
+        });
+        if (preorderStatusError) console.error("Accepted pre-orders could not be marked as ordered.", preorderStatusError);
+      } catch (preorderStatusError) {
+        console.error("Accepted pre-orders could not be marked as ordered.", preorderStatusError);
       }
       localStorage.removeItem("jovick-cart");
       localStorage.removeItem("jovick-menu-cache");

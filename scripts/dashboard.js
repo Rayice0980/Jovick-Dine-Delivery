@@ -89,7 +89,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       let processed = [];
       let cart = [];
       try {
-        processed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+        const userProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids:" + customerId) || "[]");
+        const legacyProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
+        processed = [...new Set([...(Array.isArray(userProcessed) ? userProcessed : []), ...(Array.isArray(legacyProcessed) ? legacyProcessed : [])].map(String))];
         cart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
         if (!Array.isArray(processed)) processed = [];
         if (!Array.isArray(cart)) cart = [];
@@ -117,7 +119,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
       if (changed) {
         localStorage.setItem("jovick-cart", JSON.stringify(cart));
+        localStorage.setItem("jovick-accepted-preorder-ids:" + customerId, JSON.stringify(Array.from(processedSet)));
         localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
+        window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
       }
 
       let panel = document.getElementById("acceptedPreordersPanel");
@@ -236,6 +240,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await syncAcceptedPreorders(currentUser.id);
     await loadOrders(currentUser.id);
+    window.setInterval(() => { syncAcceptedPreorders(currentUser.id).catch(() => {}); }, 30000);
 
     const fullName = profile.full_name || "Jovick customer";
     document.getElementById("welcomeName").textContent = "Hello, " + fullName.split(/\s+/)[0] + "!";
