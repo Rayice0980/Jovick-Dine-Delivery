@@ -14,6 +14,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   let sharedDishes = [];
   let ownDishAvailability = [];
   let knownPreorderIds = null;
+  let notificationOrders = [];
+  let notificationPreorders = [];
+  let notificationSeenAt = 0;
+  let notificationStorageKey = "";
   let knownOrderIds = null;
   let menuExpanded = false;
   let catalogueExpanded = false;
@@ -102,6 +106,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadMenu();
     await loadSharedCatalogue();
     await loadPreorderRequests();
+    setupRestaurantNotifications();
     await loadOrders();
     window.setInterval(() => { loadOrders().catch(() => {}); }, 30000);
     document.getElementById("catalogueSearch")?.addEventListener("input", renderSharedCatalogue);
@@ -124,6 +129,60 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.setInterval(() => { loadPreorderRequests().catch(() => {}); }, 30000);
   } catch (error) {
     showNotice(error.message || "We couldn't load your restaurant workspace. Please refresh and try again.", true);
+  }
+
+
+  function renderRestaurantNotifications() {
+    const dot = document.getElementById("restaurantNotificationDot");
+    const root = document.getElementById("restaurantNotificationItems");
+    if (!dot || !root) return;
+    const items = [
+      ...notificationOrders.map(order => ({ type: "order", id: String(order.id), title: "Order " + order.order_number, detail: (statusLabels[order.status] || order.status) + " · " + new Date(order.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }), created_at: order.created_at, target: "incomingOrders" })),
+      ...notificationPreorders.map(request => ({ type: "preorder", id: String(request.id), title: "Pre-order: " + request.dish_name, detail: "Pending request · " + new Date(request.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }), created_at: request.created_at, target: "preorderRequests" }))
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+    const hasUnread = items.some(item => new Date(item.created_at).getTime() > notificationSeenAt);
+    dot.hidden = !hasUnread;
+    root.replaceChildren();
+    if (!items.length) {
+      root.append(safeElement("p", "restaurant-notification-empty", "No recent orders or pre-orders."));
+      return;
+    }
+    items.forEach(item => {
+      const button = safeElement("button", "restaurant-notification-item" + (new Date(item.created_at).getTime() > notificationSeenAt ? " is-unread" : ""));
+      button.type = "button";
+      button.append(safeElement("strong", "", item.title), safeElement("span", "", item.detail));
+      button.addEventListener("click", () => {
+        document.getElementById("restaurantNotificationDropdown").hidden = true;
+        document.getElementById("restaurantNotificationButton")?.setAttribute("aria-expanded", "false");
+        document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      root.append(button);
+    });
+  }
+
+  function setupRestaurantNotifications() {
+    const button = document.getElementById("restaurantNotificationButton");
+    const dropdown = document.getElementById("restaurantNotificationDropdown");
+    if (!button || !dropdown) return;
+    notificationStorageKey = "jovick-restaurant-notifications-seen:" + restaurant.id;
+    notificationSeenAt = Number(localStorage.getItem(notificationStorageKey) || 0);
+    button.addEventListener("click", () => {
+      const opening = dropdown.hidden;
+      dropdown.hidden = !opening;
+      button.setAttribute("aria-expanded", String(opening));
+      if (opening) {
+        notificationSeenAt = Date.now();
+        localStorage.setItem(notificationStorageKey, String(notificationSeenAt));
+        renderRestaurantNotifications();
+      }
+    });
+    document.addEventListener("click", event => {
+      if (!event.target.closest(".restaurant-notification")) {
+        dropdown.hidden = true;
+        button.setAttribute("aria-expanded", "false");
+      }
+    });
+    renderRestaurantNotifications();
   }
 
   async function loadMenu() {
@@ -432,6 +491,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         .select("id,dish_name,quantity,requested_for,notes,delivery_area,created_at")
         .eq("status", "pending").order("created_at", { ascending: true }).limit(100);
       if (error) throw error;
+      notificationPreorders = data || [];
+      renderRestaurantNotifications();
       const currentIds = new Set((data || []).map(request => request.id));
       if (knownPreorderIds) {
         const incoming = (data || []).filter(request => !knownPreorderIds.has(request.id));
@@ -524,10 +585,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     ordersList.replaceChildren();
     document.getElementById("ordersCount").textContent = String((orders || []).length);
     if (!orders?.length) {
+      notificationOrders = [];
+      renderRestaurantNotifications();
       ordersList.append(safeElement("p", "empty-state", "No incoming orders yet. Orders for your restaurant will appear here."));
       return;
     }
     const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => String(line.restaurant_id || "") === String(restaurant.id)); });
+    notificationOrders = availableOrders;
+    renderRestaurantNotifications();
     const currentOrderIds = new Set(availableOrders.map(order => String(order.id)));
     if (knownOrderIds) {
       const incoming = availableOrders.filter(order => !knownOrderIds.has(String(order.id)));
