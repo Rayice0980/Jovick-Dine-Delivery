@@ -2,13 +2,11 @@ import { supabase, supabaseConfigured } from "./supabase-client.js";
 
 async function refreshMenuAndAcceptedPreorders() {
   if (!supabaseConfigured || !supabase) return;
-
   try {
-    const { data, error } = await supabase.rpc("get_public_available_menu");
-    if (error) throw error;
-    if (!Array.isArray(data)) throw new Error("The live menu response was invalid.");
-
-    const menu = data.map((item) => ({
+    const { data: menuData, error: menuError } = await supabase.rpc("get_public_available_menu");
+    if (menuError) throw menuError;
+    if (!Array.isArray(menuData)) throw new Error("The live menu response was invalid.");
+    const menu = menuData.map((item) => ({
       id: Number(item.id),
       name: item.name,
       category: item.category,
@@ -18,7 +16,6 @@ async function refreshMenuAndAcceptedPreorders() {
       desc: item.description,
       image: item.image_url,
     }));
-
     localStorage.setItem("jovick-menu-cache", JSON.stringify(menu));
     if (typeof window.jovickSetMenu === "function") window.jovickSetMenu(menu);
 
@@ -26,53 +23,58 @@ async function refreshMenuAndAcceptedPreorders() {
     if (sessionError) throw sessionError;
     const user = sessionData.session?.user;
     if (!user) return;
-
     const { data: profile, error: profileError } = await supabase
       .from("profiles").select("account_type").eq("id", user.id).maybeSingle();
     if (profileError) throw profileError;
     if (profile?.account_type !== "customer") return;
 
-    // Only fetch this customer's requests; never mix accepted pre-orders across accounts.
     const { data: requests, error: requestsError } = await supabase
       .from("dish_preorder_requests")
-      .select("id,customer_id,accepted_menu_item_id,quantity")
+      .select("id,dish_name,quantity,accepted_price,accepted_restaurant_id,status")
       .eq("customer_id", user.id)
-      .eq("status", "accepted")
-      .not("accepted_menu_item_id", "is", null);
+      .in("status", ["accepted", "ordered"]);
     if (requestsError) throw requestsError;
 
-    const userStorageKey = "jovick-accepted-preorder-ids:" + user.id;
-    let processed = [];
-    let cart = [];
-    try {
-      const userProcessed = JSON.parse(localStorage.getItem(userStorageKey) || "[]");
-      const legacyProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
-      processed = [...new Set([...(Array.isArray(userProcessed) ? userProcessed : []), ...(Array.isArray(legacyProcessed) ? legacyProcessed : [])].map(String))];
-      cart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
-      if (!Array.isArray(cart)) cart = [];
-    } catch {
-      processed = [];
-      cart = [];
+    const restaurantIds = [...new Set((requests || []).map((request) => request.accepted_restaurant_id).filter(Boolean))];
+    let restaurantsById = new Map();
+    if (restaurantIds.length) {
+      const { data: restaurants, error: restaurantsError } = await supabase
+        .from("restaurants").select("id,name").in("id", restaurantIds);
+      if (restaurantsError) throw restaurantsError;
+      restaurantsById = new Map((restaurants || []).map((restaurant) => [restaurant.id, restaurant.name]));
     }
 
-    const processedSet = new Set(processed);
-    let changed = false;
-    (requests || []).forEach((request) => {
+    let cart = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+      cart = Array.isArray(saved) ? saved : [];
+    } catch {
+      cart = [];
+    }
+    const requestById = new Map((requests || []).map((request) => [String(request.id), request]));
+    const orderedIds = new Set((requests || []).filter((request) => request.status === "ordered").map((request) => String(request.id)));
+    const before = JSON.stringify(cart);
+    cart = cart.filter((item) => !item.preorderRequestId || !orderedIds.has(String(item.preorderRequestId)));
+
+    (requests || []).filter((request) => request.status === "accepted" && Number(request.accepted_price) > 0).forEach((request) => {
       const requestId = String(request.id);
-      const itemId = Number(request.accepted_menu_item_id);
-      const quantity = Number(request.quantity);
-      if (processedSet.has(requestId) || !menu.some((item) => item.id === itemId) || !Number.isInteger(quantity) || quantity < 1) return;
-      const existing = cart.find((item) => Number(item.id) === itemId);
-      if (existing) existing.qty = Number(existing.qty) + quantity;
-      else cart.push({ id: itemId, qty: quantity });
-      processedSet.add(requestId);
-      changed = true;
+      const existing = cart.find((item) => String(item.preorderRequestId || "") === requestId);
+      const privateItem = {
+        id: "preorder:" + requestId,
+        preorderRequestId: requestId,
+        qty: Number(request.quantity),
+        name: request.dish_name,
+        price: Number(request.accepted_price),
+        restaurantId: request.accepted_restaurant_id,
+        restaurantName: restaurantsById.get(request.accepted_restaurant_id) || "Accepting business"
+      };
+      if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
+      if (existing) Object.assign(existing, privateItem);
+      else cart.push(privateItem);
     });
 
-    if (changed) {
+    if (JSON.stringify(cart) !== before) {
       localStorage.setItem("jovick-cart", JSON.stringify(cart));
-      localStorage.setItem(userStorageKey, JSON.stringify(Array.from(processedSet)));
-      localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
       window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
       if (typeof window.jovickSetMenu === "function") window.jovickSetMenu(menu);
     }
@@ -83,7 +85,6 @@ async function refreshMenuAndAcceptedPreorders() {
 
 window.addEventListener("load", refreshMenuAndAcceptedPreorders);
 window.addEventListener("focus", refreshMenuAndAcceptedPreorders);
-// Keep the bag in sync if a restaurant accepts a request while the customer is browsing.
 window.setInterval(() => {
   if (document.visibilityState === "visible") refreshMenuAndAcceptedPreorders();
 }, 30000);
