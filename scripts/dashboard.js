@@ -39,6 +39,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { data: lines, error: linesError } = await supabase.from("order_items")
         .select("order_id, item_name, quantity, line_total").in("order_id", orders.map((o) => o.id));
       if (linesError) throw linesError;
+      const { data: reports, error: reportsError } = await supabase.from("order_issue_reports")
+        .select("id,order_id,reason,details,status,created_at")
+        .eq("customer_id", customerId).in("order_id", orders.map((o) => o.id));
+      if (reportsError) throw reportsError;
       const money = (v) => "₦" + Number(v).toLocaleString("en-NG");
       const statusLabels = { received: "Awaiting confirmation", confirmed: "Confirmed", preparing: "Being prepared", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
       orders.forEach((order) => {
@@ -60,7 +64,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         const footer = document.createElement("div"); footer.className = "order-history-footer";
         const area = document.createElement("span"); area.textContent = "Delivery: " + order.delivery_area;
         const total = document.createElement("strong"); total.textContent = "Total " + money(order.total);
-        footer.append(area, total); card.append(footer); container.append(card);
+        footer.append(area, total); card.append(footer);
+        const orderReports = (reports || []).filter((report) => Number(report.order_id) === Number(order.id));
+        const reportArea = document.createElement("div"); reportArea.className = "order-report-area";
+        if (orderReports.length) {
+          orderReports.forEach((report) => {
+            const reportLine = document.createElement("p"); reportLine.className = "order-report-status";
+            const reasonLabels = { delivery_delayed: "Delivery delayed", marked_delivered_not_received: "Marked delivered, but not received", missing_items: "Missing items", wrong_order: "Wrong order", food_quality: "Food quality", other: "Other issue" };
+            reportLine.textContent = "Report submitted · " + (reasonLabels[report.reason] || report.reason) + " · " + report.status;
+            reportArea.append(reportLine);
+          });
+        } else if (order.status !== "cancelled") {
+          const reportButton = document.createElement("button"); reportButton.type = "button"; reportButton.className = "btn btn-muted order-report-button"; reportButton.textContent = "Report a problem";
+          reportButton.addEventListener("click", () => {
+            reportButton.hidden = true;
+            const reportForm = document.createElement("form"); reportForm.className = "order-report-form";
+            const reasonLabel = document.createElement("label"); reasonLabel.textContent = "What happened?";
+            const reason = document.createElement("select"); reason.required = true;
+            [["delivery_delayed","Delivery is delayed"],["marked_delivered_not_received","Marked delivered, but food has not arrived"],["missing_items","Items are missing"],["wrong_order","Wrong order received"],["food_quality","Food quality problem"],["other","Other issue"]].forEach(([value,label]) => {
+              const option = document.createElement("option"); option.value = value; option.textContent = label; reason.append(option);
+            });
+            reasonLabel.append(reason);
+            const detailsLabel = document.createElement("label"); detailsLabel.textContent = "More details (optional)";
+            const details = document.createElement("textarea"); details.rows = 3; details.maxLength = 1000; details.placeholder = "Tell us what happened";
+            detailsLabel.append(details);
+            const submit = document.createElement("button"); submit.type = "submit"; submit.className = "btn"; submit.textContent = "Submit report";
+            const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "btn btn-muted"; cancel.textContent = "Cancel";
+            cancel.addEventListener("click", () => { reportForm.remove(); reportButton.hidden = false; });
+            reportForm.append(reasonLabel, detailsLabel, submit, cancel);
+            reportForm.addEventListener("submit", async (event) => {
+              event.preventDefault(); submit.disabled = true;
+              try {
+                const { error: reportError } = await supabase.from("order_issue_reports").insert({
+                  order_id: order.id, customer_id: customerId, reason: reason.value, details: details.value.trim()
+                });
+                if (reportError) throw reportError;
+                showMessage("Your report has been submitted for order " + order.order_number + ".", false);
+                await loadOrders(customerId);
+              } catch (error) {
+                const errorText = document.createElement("p"); errorText.className = "order-report-error"; errorText.textContent = error.message || "Your report could not be submitted. Please try again.";
+                reportForm.prepend(errorText); submit.disabled = false;
+              }
+            });
+            reportArea.append(reportForm);
+          });
+          reportArea.append(reportButton);
+        }
+        card.append(reportArea); container.append(card);
       });
     } catch (error) {
       container.replaceChildren();
@@ -70,133 +120,59 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function syncAcceptedPreorders(customerId) {
-    const ordersContainer = document.getElementById("ordersList");
-    if (!ordersContainer) return;
     try {
-      const [menuResult, requestsResult] = await Promise.all([
-        supabase.rpc("get_public_available_menu"),
-        supabase.from("dish_preorder_requests")
-          .select("id,dish_name,quantity,accepted_menu_item_id,accepted_at")
-          .eq("customer_id", customerId)
-          .eq("status", "accepted")
-          .not("accepted_menu_item_id", "is", null)
-          .order("accepted_at", { ascending: false })
-      ]);
-      if (menuResult.error) throw menuResult.error;
-      if (requestsResult.error) throw requestsResult.error;
-      const menu = Array.isArray(menuResult.data) ? menuResult.data : [];
-      const accepted = requestsResult.data || [];
-      let processed = [];
+      const { data: requests, error: requestError } = await supabase.from("dish_preorder_requests")
+        .select("id,dish_name,quantity,accepted_price,accepted_restaurant_id,status,accepted_at")
+        .eq("customer_id", customerId).in("status", ["accepted", "ordered"]).order("accepted_at", { ascending: false });
+      if (requestError) throw requestError;
+      const allRequests = requests || [];
+      const restaurantIds = [...new Set(allRequests.map((request) => request.accepted_restaurant_id).filter(Boolean))];
+      let restaurantsById = new Map();
+      if (restaurantIds.length) {
+        const { data, error } = await supabase.from("restaurants").select("id,name").in("id", restaurantIds);
+        if (error) throw error;
+        restaurantsById = new Map((data || []).map((restaurant) => [restaurant.id, restaurant.name]));
+      }
       let cart = [];
-      try {
-        const userProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids:" + customerId) || "[]");
-        const legacyProcessed = JSON.parse(localStorage.getItem("jovick-accepted-preorder-ids") || "[]");
-        processed = [...new Set([...(Array.isArray(userProcessed) ? userProcessed : []), ...(Array.isArray(legacyProcessed) ? legacyProcessed : [])].map(String))];
-        cart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
-        if (!Array.isArray(processed)) processed = [];
-        if (!Array.isArray(cart)) cart = [];
-      } catch {
-        processed = [];
-        cart = [];
-      }
-      const processedSet = new Set(processed.map(String));
-      let changed = false;
-
-      // Automatically place newly accepted requests in the bag. If an earlier
-      // attempt marked one as processed but the bag is now missing it, the
-      // customer gets an explicit recovery button below instead of losing it.
-      accepted.forEach(request => {
+      try { const parsed = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); cart = Array.isArray(parsed) ? parsed : []; } catch { cart = []; }
+      const orderedIds = new Set(allRequests.filter((request) => request.status === "ordered").map((request) => String(request.id)));
+      cart = cart.filter((item) => !item.preorderRequestId || !orderedIds.has(String(item.preorderRequestId)));
+      allRequests.filter((request) => request.status === "accepted" && Number(request.accepted_price) > 0).forEach((request) => {
         const requestId = String(request.id);
-        const itemId = Number(request.accepted_menu_item_id);
-        const quantity = Number(request.quantity);
-        if (processedSet.has(requestId) || !menu.some(item => Number(item.id) === itemId) ||
-            !Number.isInteger(quantity) || quantity < 1) return;
-        const existing = cart.find(item => Number(item.id) === itemId);
-        if (existing) existing.qty = Number(existing.qty) + quantity;
-        else cart.push({ id: itemId, qty: quantity });
-        processedSet.add(requestId);
-        changed = true;
+        const privateItem = { id: "preorder:" + requestId, preorderRequestId: requestId, qty: Number(request.quantity), name: request.dish_name, price: Number(request.accepted_price), restaurantId: request.accepted_restaurant_id, restaurantName: restaurantsById.get(request.accepted_restaurant_id) || "Accepting business" };
+        if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
+        const existing = cart.find((item) => String(item.preorderRequestId || "") === requestId);
+        if (existing) Object.assign(existing, privateItem); else cart.push(privateItem);
       });
-      if (changed) {
-        localStorage.setItem("jovick-cart", JSON.stringify(cart));
-        localStorage.setItem("jovick-accepted-preorder-ids:" + customerId, JSON.stringify(Array.from(processedSet)));
-        localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(processedSet)));
-        window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
-      }
+      localStorage.setItem("jovick-cart", JSON.stringify(cart));
+      window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
 
       let panel = document.getElementById("acceptedPreordersPanel");
       if (!panel) {
-        panel = document.createElement("section");
-        panel.id = "acceptedPreordersPanel";
-        panel.className = "dashboard-panel";
+        panel = document.createElement("section"); panel.id = "acceptedPreordersPanel"; panel.className = "dashboard-panel";
         const ordersSection = document.getElementById("orders");
         if (ordersSection?.parentNode) ordersSection.parentNode.insertBefore(panel, ordersSection);
       }
       panel.replaceChildren();
-      const heading = document.createElement("h2");
-      heading.textContent = "Accepted pre-orders";
-      panel.append(heading);
+      const heading = document.createElement("h2"); heading.textContent = "Accepted pre-orders"; panel.append(heading);
+      const accepted = allRequests.filter((request) => request.status === "accepted");
       if (!accepted.length) {
-        const empty = document.createElement("p");
-        empty.textContent = "Accepted pre-orders will appear here when a restaurant agrees to prepare a requested dish.";
-        panel.append(empty);
+        const empty = document.createElement("p"); empty.textContent = "Accepted pre-orders will appear here when a business agrees to prepare your requested dish."; panel.append(empty);
         return;
       }
-      accepted.forEach(request => {
-        const itemId = Number(request.accepted_menu_item_id);
-        const food = menu.find(item => Number(item.id) === itemId);
-        const card = document.createElement("article");
-        card.className = "order-history-card";
-        const title = document.createElement("h3");
-        title.textContent = food?.name || request.dish_name || "Accepted dish";
-        const details = document.createElement("p");
-        details.textContent = "Quantity: " + Number(request.quantity) + (food ? " · Price per item: ₦" + Number(food.price).toLocaleString("en-NG") : "");
-        card.append(title, details);
-        const currentlyInBag = cart.some(item => Number(item.id) === itemId);
-        if (currentlyInBag) {
-          const status = document.createElement("p");
-          status.textContent = "This accepted dish is in your bag.";
-          card.append(status);
-        } else {
-          const add = document.createElement("button");
-          add.type = "button";
-          add.className = "btn";
-          add.textContent = "Add accepted dish to bag";
-          add.addEventListener("click", () => {
-            if (!food) {
-              showMessage("This accepted dish is no longer on the available menu. Please contact the restaurant.", true);
-              return;
-            }
-            let currentCart = [];
-            try {
-              currentCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
-              if (!Array.isArray(currentCart)) currentCart = [];
-            } catch { currentCart = []; }
-            const existing = currentCart.find(item => Number(item.id) === itemId);
-            if (existing) existing.qty = Number(existing.qty) + Number(request.quantity);
-            else currentCart.push({ id: itemId, qty: Number(request.quantity) });
-            const currentProcessed = new Set(processedSet);
-            currentProcessed.add(String(request.id));
-            localStorage.setItem("jovick-cart", JSON.stringify(currentCart));
-            localStorage.setItem("jovick-accepted-preorder-ids", JSON.stringify(Array.from(currentProcessed)));
-            showMessage("Accepted dish added to your bag. Open the menu to review it and complete checkout.");
-            add.disabled = true;
-            add.textContent = "Added to bag";
-          });
-          card.append(add);
-        }
-        const link = document.createElement("a");
-        link.href = "foods.html";
-        link.className = "text-link";
-        link.textContent = "Open menu and checkout";
-        card.append(link);
-        panel.append(card);
+      accepted.forEach((request) => {
+        const card = document.createElement("article"); card.className = "order-history-card";
+        const title = document.createElement("h3"); title.textContent = request.dish_name || "Accepted dish";
+        const details = document.createElement("p"); details.textContent = "Quantity: " + request.quantity + " · Price per item: ₦" + Number(request.accepted_price).toLocaleString("en-NG");
+        const business = document.createElement("p"); business.textContent = "Accepted by: " + (restaurantsById.get(request.accepted_restaurant_id) || "Business");
+        const note = document.createElement("p"); note.textContent = "This dish is private to you and the accepting business; it is not listed on the public menu.";
+        const link = document.createElement("a"); link.href = "checkout.html"; link.className = "btn"; link.textContent = "Review bag and check out";
+        card.append(title, details, business, note, link); panel.append(card);
       });
     } catch (error) {
       showMessage("Accepted pre-orders could not be synced: " + (error.message || "Please refresh and try again."), true);
     }
   }
-
   function showMessage(text, isError = false) {
     message.textContent = text;
     message.hidden = false;
@@ -240,7 +216,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await syncAcceptedPreorders(currentUser.id);
     await loadOrders(currentUser.id);
-    window.setInterval(() => { syncAcceptedPreorders(currentUser.id).catch(() => {}); }, 30000);
+    window.setInterval(() => { if (document.visibilityState === "visible") syncAcceptedPreorders(currentUser.id).catch(() => {}); }, 30000);
 
     const fullName = profile.full_name || "Jovick customer";
     document.getElementById("welcomeName").textContent = "Hello, " + fullName.split(/\s+/)[0] + "!";
