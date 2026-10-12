@@ -146,13 +146,20 @@ function renderCart() {
     const name = document.createElement("strong"); name.textContent = food.name;
     const unit = document.createElement("small"); unit.textContent = money(food.price) + " each" + (preorder ? " · Private pre-order for " + food.restaurantName : "");
     const quantity = document.createElement("div"); quantity.className = "quantity";
-    const minus = document.createElement("button"); minus.type = "button"; minus.dataset.qty = key; minus.dataset.delta = "-1"; minus.setAttribute("aria-label", "Remove one"); minus.textContent = "−";
-    const amount = document.createElement("span"); amount.textContent = String(item.qty);
-    const plus = document.createElement("button"); plus.type = "button"; plus.dataset.qty = key; plus.dataset.delta = "1"; plus.setAttribute("aria-label", "Add one"); plus.textContent = "+";
-    quantity.append(minus, amount, plus);
-    const remove = document.createElement("button"); remove.type = "button"; remove.dataset.remove = key; remove.textContent = "Remove dish";
-    remove.style.cssText = "margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0";
-    details.append(name, unit, quantity, remove);
+    if (preorder) {
+      quantity.textContent = "Quantity agreed with business: " + item.qty;
+    } else {
+      const minus = document.createElement("button"); minus.type = "button"; minus.dataset.qty = key; minus.dataset.delta = "-1"; minus.setAttribute("aria-label", "Remove one"); minus.textContent = "−";
+      const amount = document.createElement("span"); amount.textContent = String(item.qty);
+      const plus = document.createElement("button"); plus.type = "button"; plus.dataset.qty = key; plus.dataset.delta = "1"; plus.setAttribute("aria-label", "Add one"); plus.textContent = "+";
+      quantity.append(minus, amount, plus);
+    }
+    details.append(name, unit, quantity);
+    if (!preorder) {
+      const remove = document.createElement("button"); remove.type = "button"; remove.dataset.remove = key; remove.textContent = "Remove dish";
+      remove.style.cssText = "margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0";
+      details.append(remove);
+    }
     const line = document.createElement("strong"); line.textContent = money(food.price * Number(item.qty));
     row.append(details, line); root.append(row);
   });
