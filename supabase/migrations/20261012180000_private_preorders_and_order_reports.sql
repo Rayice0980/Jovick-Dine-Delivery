@@ -221,8 +221,8 @@ begin
         v_line_total := v_price * v_quantity;
         insert into public.order_items (order_id, menu_item_id, item_name, unit_price, quantity, line_total, restaurant_id, preorder_request_id)
         values (v_order_id, null, v_name, v_price, v_quantity, v_line_total, v_item_restaurant_id, v_request_id);
-        update public.dish_preorder_requests set status = 'ordered'
-        where id = v_request_id and customer_id = v_customer_id and status = 'accepted';
+        update public.dish_preorder_requests d set status = 'ordered'
+        where d.id = v_request_id and d.customer_id = v_customer_id and d.status = 'accepted';
       else
         v_menu_id := (v_item->>'id')::bigint;
         v_quantity := (v_item->>'qty')::integer;
