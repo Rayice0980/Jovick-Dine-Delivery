@@ -229,7 +229,16 @@ function boot() {
 window.jovickSetMenu = function (items) {
   if (!Array.isArray(items)) return;
   FOOD.splice(0, FOOD.length, ...items);
-  cart = cart.filter((item) => FOOD.some((food) => food.id === item.id));
+  try {
+    const savedCart = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+    if (Array.isArray(savedCart)) cart = savedCart;
+  } catch {
+    cart = [];
+  }
+  cart = cart.filter((item) =>
+    FOOD.some((food) => Number(food.id) === Number(item.id)) &&
+    Number.isInteger(Number(item.qty)) && Number(item.qty) > 0
+  ).map((item) => ({ id: Number(item.id), qty: Number(item.qty) }));
   persist();
   renderFoodGrid("foodGrid", document.body.dataset.page === "home" ? 6 : null);
 };
