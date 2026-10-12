@@ -1,6 +1,6 @@
 const FOOD = [];
 const money = (n) => "₦" + Number(n).toLocaleString("en-NG");
-let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); return Array.isArray(saved) ? saved.filter((item) => FOOD.some((food) => food.id === item.id)) : []; } catch { return []; } })(),
+let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); return Array.isArray(saved) ? saved.filter((item) => item?.preorderRequestId || FOOD.some((food) => Number(food.id) === Number(item.id))) : []; } catch { return []; } })(),
   activeCategory = "All",
   searchTerm = "";
 const page = document.body.dataset.page || "home";
@@ -79,11 +79,12 @@ function renderFoodGrid(target, limit) {
     ? items.map(foodCard).join("")
     : "<div class=\"menu-empty-state\"><h3>No dishes available yet</h3><p>Approved food businesses will publish their menus here. Please check back soon.</p></div>";
 }
+function cartItemKey(item) {
+  return item.preorderRequestId ? "preorder:" + item.preorderRequestId : String(item.id);
+}
 function persist() {
   localStorage.setItem("jovick-cart", JSON.stringify(cart));
-  document
-    .querySelectorAll("#cartCount")
-    .forEach((e) => (e.textContent = cart.reduce((s, i) => s + i.qty, 0)));
+  document.querySelectorAll("#cartCount").forEach((e) => (e.textContent = cart.reduce((s, i) => s + Number(i.qty || 0), 0)));
   renderCart();
 }
 function toast(msg) {
@@ -97,67 +98,78 @@ function toast(msg) {
 function addToCart(id) {
   const f = FOOD.find((x) => x.id === id);
   if (!f) return;
-  const item = cart.find((x) => x.id === id);
+  const item = cart.find((x) => !x.preorderRequestId && Number(x.id) === Number(id));
   if (item) item.qty++;
   else cart.push({ id, qty: 1 });
   persist();
   toast(f.name + " added to your bag");
 }
 window.jovickAddToCartAuthorized = addToCart;
-function changeQty(id, d) {
-  const i = cart.find((x) => x.id === id);
-  if (!i) return;
-  i.qty += d;
-  if (i.qty <= 0) cart = cart.filter((x) => x.id !== id);
+function changeQty(key, d) {
+  const item = cart.find((entry) => cartItemKey(entry) === String(key));
+  if (!item) return;
+  item.qty = Number(item.qty) + d;
+  if (item.qty <= 0) cart = cart.filter((entry) => cartItemKey(entry) !== String(key));
   persist();
 }
-function removeFromCart(id) {
-  cart = cart.filter((item) => item.id !== id);
+function removeFromCart(key) {
+  cart = cart.filter((item) => cartItemKey(item) !== String(key));
   persist();
   toast("Dish removed from your bag");
 }
 function renderCart() {
-  const el = document.getElementById("cartContents");
-  if (!el) return;
-  const count = cart.reduce((s, i) => s + i.qty, 0);
-  cart = cart.filter((item) => FOOD.some((food) => food.id === item.id));
-  const subtotal = cart.reduce((s, item) => { const food = FOOD.find((entry) => entry.id === item.id); return s + (food ? item.qty * food.price : 0); }, 0);
-  document.getElementById("cartCountHeading").textContent = count
-    ? "(" + count + ")"
-    : "";
-  if (!cart.length) {
-    el.innerHTML =
-      '<div class="empty-cart"><span>🥡</span><h3>Your bag is taking a break</h3><p>Add a few favourites and we’ll get things ready.</p><a class="btn" href="foods.html">Explore the menu</a></div>';
-    return;
+  const root = document.getElementById("cartContents");
+  if (!root) return;
+  cart = cart.filter((item) => item?.preorderRequestId || FOOD.some((food) => Number(food.id) === Number(item.id)));
+  const entries = cart.map((item) => {
+    const preorder = Boolean(item.preorderRequestId);
+    const food = preorder ? { name: item.name || "Accepted pre-order", price: Number(item.price || 0), restaurantName: item.restaurantName || "The accepting business" } : FOOD.find((entry) => Number(entry.id) === Number(item.id));
+    return food ? { item, food, preorder, key: cartItemKey(item) } : null;
+  }).filter(Boolean);
+  const count = entries.reduce((sum, entry) => sum + Number(entry.item.qty || 0), 0);
+  const subtotal = entries.reduce((sum, entry) => sum + Number(entry.food.price) * Number(entry.item.qty), 0);
+  const countHeading = document.getElementById("cartCountHeading");
+  if (countHeading) countHeading.textContent = count ? "(" + count + ")" : "";
+  document.querySelectorAll("#cartCount").forEach((node) => (node.textContent = String(count)));
+  root.replaceChildren();
+  if (!entries.length) {
+    const empty = document.createElement("div"); empty.className = "empty-cart";
+    const icon = document.createElement("span"); icon.textContent = "🥡";
+    const title = document.createElement("h3"); title.textContent = "Your bag is taking a break";
+    const copy = document.createElement("p"); copy.textContent = "Add a few favourites and we’ll get things ready.";
+    const link = document.createElement("a"); link.className = "btn"; link.href = "foods.html"; link.textContent = "Explore the menu";
+    empty.append(icon, title, copy, link); root.append(empty); return;
   }
-  el.innerHTML =
-    cart
-      .map((i) => {
-        const f = FOOD.find((x) => x.id === i.id);
-        return (
-          '<div class="cart-item"><div><strong>' +
-          f.name +
-          "</strong><small>" +
-          money(f.price) +
-          ' each</small><div class="quantity"><button data-qty="' +
-          i.id +
-          '" data-delta="-1" aria-label="Remove one">−</button><span>' +
-          i.qty +
-          '</span><button data-qty="' +
-          i.id +
-          '" data-delta="1" aria-label="Add one">+</button></div><button type="button" data-remove="' +
-          i.id +
-          '" aria-label="Remove ' +
-          f.name +
-          ' from bag" style="margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0">Remove dish</button></div><strong>' +
-          money(f.price * i.qty) +
-          "</strong></div>"
-        );
-      })
-      .join("") +
-    '<div class="cart-total"><span>Subtotal</span><span>' +
-    money(subtotal) +
-    '</span></div><p class="cart-help">Delivery fee is calculated after your address is entered. Checkout here is a demo and does not process payment.</p><a class="btn" style="width:100%" href="checkout.html">Continue to checkout ↗</a>';
+  entries.forEach(({ item, food, preorder, key }) => {
+    const row = document.createElement("div"); row.className = "cart-item";
+    const details = document.createElement("div");
+    const name = document.createElement("strong"); name.textContent = food.name;
+    const unit = document.createElement("small"); unit.textContent = money(food.price) + " each" + (preorder ? " · Private pre-order for " + food.restaurantName : "");
+    const quantity = document.createElement("div"); quantity.className = "quantity";
+    if (preorder) {
+      quantity.textContent = "Quantity agreed with business: " + item.qty;
+    } else {
+      const minus = document.createElement("button"); minus.type = "button"; minus.dataset.qty = key; minus.dataset.delta = "-1"; minus.setAttribute("aria-label", "Remove one"); minus.textContent = "−";
+      const amount = document.createElement("span"); amount.textContent = String(item.qty);
+      const plus = document.createElement("button"); plus.type = "button"; plus.dataset.qty = key; plus.dataset.delta = "1"; plus.setAttribute("aria-label", "Add one"); plus.textContent = "+";
+      quantity.append(minus, amount, plus);
+    }
+    details.append(name, unit, quantity);
+    if (!preorder) {
+      const remove = document.createElement("button"); remove.type = "button"; remove.dataset.remove = key; remove.textContent = "Remove dish";
+      remove.style.cssText = "margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0";
+      details.append(remove);
+    }
+    const line = document.createElement("strong"); line.textContent = money(food.price * Number(item.qty));
+    row.append(details, line); root.append(row);
+  });
+  const total = document.createElement("div"); total.className = "cart-total";
+  const label = document.createElement("span"); label.textContent = "Subtotal";
+  const amount = document.createElement("span"); amount.textContent = money(subtotal);
+  total.append(label, amount); root.append(total);
+  const help = document.createElement("p"); help.className = "cart-help"; help.textContent = "Delivery fee is calculated after your address is entered. Checkout does not process payment.";
+  const checkout = document.createElement("a"); checkout.className = "btn"; checkout.href = "checkout.html"; checkout.style.width = "100%"; checkout.textContent = "Continue to checkout ↗";
+  root.append(help, checkout);
 }
 function openCart() {
   document.getElementById("cartDrawer")?.classList.add("open");
@@ -191,9 +203,9 @@ function boot() {
     if (e.target.closest("[data-cart-close]")) closeCart();
     if (e.target.id === "cartDrawer") closeCart();
     const qty = e.target.closest("[data-qty]");
-    if (qty) changeQty(Number(qty.dataset.qty), Number(qty.dataset.delta));
+    if (qty) changeQty(qty.dataset.qty, Number(qty.dataset.delta));
     const remove = e.target.closest("[data-remove]");
-    if (remove) removeFromCart(Number(remove.dataset.remove));
+    if (remove) removeFromCart(remove.dataset.remove);
     const cat = e.target.closest("[data-category]");
     if (cat) {
       activeCategory = cat.dataset.category;
@@ -236,9 +248,11 @@ window.jovickSetMenu = function (items) {
     cart = [];
   }
   cart = cart.filter((item) =>
-    FOOD.some((food) => Number(food.id) === Number(item.id)) &&
+    (item?.preorderRequestId || FOOD.some((food) => Number(food.id) === Number(item.id))) &&
     Number.isInteger(Number(item.qty)) && Number(item.qty) > 0
-  ).map((item) => ({ id: Number(item.id), qty: Number(item.qty) }));
+  ).map((item) => item.preorderRequestId
+    ? { ...item, qty: Number(item.qty), id: "preorder:" + item.preorderRequestId }
+    : { id: Number(item.id), qty: Number(item.qty) });
   persist();
   renderFoodGrid("foodGrid", document.body.dataset.page === "home" ? 6 : null);
 };

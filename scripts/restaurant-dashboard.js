@@ -510,11 +510,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (error) throw error;
     const orderIds = (orders || []).map(order => order.id);
     let lines = [];
+    let reports = [];
     if (orderIds.length) {
       const { data, error: linesError } = await supabase.from("order_items")
-        .select("order_id,item_name,quantity,unit_price,line_total,menu_item_id").in("order_id", orderIds);
+        .select("order_id,item_name,quantity,unit_price,line_total,menu_item_id,restaurant_id,preorder_request_id").in("order_id", orderIds);
       if (linesError) throw linesError;
       lines = data || [];
+      const { data: reportData, error: reportError } = await supabase.from("order_issue_reports")
+        .select("id,order_id,reason,details,status,created_at").in("order_id", orderIds);
+      if (reportError) throw reportError;
+      reports = reportData || [];
     }
     ordersList.replaceChildren();
     document.getElementById("ordersCount").textContent = String((orders || []).length);
@@ -522,7 +527,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ordersList.append(safeElement("p", "empty-state", "No incoming orders yet. Orders for your restaurant will appear here."));
       return;
     }
-    const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => menuItems.some(item => String(item.id) === String(line.menu_item_id))); });
+    const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => String(line.restaurant_id || "") === String(restaurant.id)); });
     const currentOrderIds = new Set(availableOrders.map(order => String(order.id)));
     if (knownOrderIds) {
       const incoming = availableOrders.filter(order => !knownOrderIds.has(String(order.id)));
@@ -557,6 +562,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         list.append(li);
       });
       card.append(list);
+      const orderReports = reports.filter(report => Number(report.order_id) === Number(order.id));
+      orderReports.forEach(report => {
+        const reasonLabels = { delivery_delayed: "Delivery delayed", marked_delivered_not_received: "Marked delivered, but customer has not received it", missing_items: "Missing items", wrong_order: "Wrong order", food_quality: "Food quality problem", other: "Other issue" };
+        card.append(safeElement("strong", "order-report-alert", "Customer report · " + (reasonLabels[report.reason] || report.reason)));
+        if (report.details) card.append(safeElement("p", "order-report-details", report.details));
+      });
       const footer = safeElement("div", "restaurant-order-footer");
       const payment = safeElement("span", "order-meta", "Payment preference: " + order.payment_method);
       footer.append(payment, safeElement("strong", "", "Total " + money(order.total)));
