@@ -52,7 +52,7 @@ function foodCard(f) {
     '</span></div><div class="food-body"><div class="food-title-row"><h3>' +
     f.name +
     '</h3><span class="food-rating">' +
-    (f.rating === "New" ? "New" : "★ " + f.rating) +
+    (f.rating === "New" ? "New" : "★ " + f.rating + " (" + f.ratingCount + ")") +
     '</span></div><p class="food-description">' +
     f.desc +
     '</p>' +
