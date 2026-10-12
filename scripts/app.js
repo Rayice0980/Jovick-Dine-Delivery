@@ -184,7 +184,15 @@ function boot() {
   const root = document.getElementById("siteHeader");
   if (root) {
     root.innerHTML = header();
-    if (page === "restaurant-dashboard") root.querySelector("[data-cart-open]")?.remove();
+    if (page === "restaurant-dashboard") {
+      const bagButton = root.querySelector("[data-cart-open]");
+      if (bagButton) {
+        const notification = document.createElement("div");
+        notification.className = "restaurant-notification";
+        notification.innerHTML = '<button type="button" class="restaurant-notification-button" id="restaurantNotificationButton" aria-label="Notifications" aria-expanded="false"><span aria-hidden="true">♧</span><span class="restaurant-notification-dot" id="restaurantNotificationDot" hidden></span></button><div class="restaurant-notification-dropdown" id="restaurantNotificationDropdown" hidden><div class="restaurant-notification-heading">Recent activity</div><div id="restaurantNotificationItems"><p class="restaurant-notification-empty">No recent orders or pre-orders.</p></div></div>';
+        bagButton.replaceWith(notification);
+      }
+    }
   }
   const foot = document.getElementById("siteFooter");
   if (foot) foot.innerHTML = footer();
