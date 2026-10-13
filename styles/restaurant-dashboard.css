@@ -450,7 +450,6 @@ body[data-page="restaurant-dashboard"] {
   }
 }
 
-
 .menu-section-heading {
   grid-column: 1 / -1;
   padding: 15px 0 2px;
@@ -465,7 +464,7 @@ body[data-page="restaurant-dashboard"] {
 .menu-section-empty {
   margin: 0 0 8px;
   color: var(--rd-muted);
-  font-size: .88rem;
+  font-size: 0.88rem;
   line-height: 1.5;
 }
 .menu-section-empty {
@@ -484,19 +483,24 @@ body[data-page="restaurant-dashboard"] {
   color: #a02c26;
 }
 .menu-card-actions button:disabled {
-  opacity: .55;
+  opacity: 0.55;
   cursor: wait;
 }
 
-
-.catalogue-tools, .preorder-catalogue-tools {
+.catalogue-tools,
+.preorder-catalogue-tools {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
   gap: 12px;
   margin: 18px 0;
 }
-.catalogue-tools input, .catalogue-tools select, .shared-dish-controls input, .shared-dish-controls select,
-.preorder-catalogue-tools input, .preorder-catalogue-tools select, .preorder-request-form input,
+.catalogue-tools input,
+.catalogue-tools select,
+.shared-dish-controls input,
+.shared-dish-controls select,
+.preorder-catalogue-tools input,
+.preorder-catalogue-tools select,
+.preorder-request-form input,
 .preorder-request-form textarea {
   width: 100%;
   min-width: 0;
@@ -507,7 +511,10 @@ body[data-page="restaurant-dashboard"] {
   color: #202a23;
   font: inherit;
 }
-.shared-dish-catalogue { display: grid; gap: 10px; }
+.shared-dish-catalogue {
+  display: grid;
+  gap: 10px;
+}
 .shared-dish-row {
   display: grid;
   grid-template-columns: minmax(150px, 1fr) minmax(320px, 1.2fr);
@@ -517,23 +524,66 @@ body[data-page="restaurant-dashboard"] {
   border-radius: 14px;
   background: #fff;
 }
-.shared-dish-info strong { display: block; color: var(--rd-dark); }
-.shared-dish-info small, .shared-dish-info p { color: var(--rd-muted); margin: 5px 0 0; }
-.shared-dish-controls { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(110px, .7fr) auto; gap: 9px; align-items: end; }
-.shared-dish-controls label { font-size: .83rem; font-weight: 700; display: grid; gap: 5px; }
-.catalogue-availability-toggle { display: flex !important; align-items: center; gap: 7px !important; padding-bottom: 10px; }
-.catalogue-availability-toggle input { width: 18px; height: 18px; }
-.shared-dish-controls .btn { padding: 10px 14px; }
-.shared-dish-feedback { grid-column: 1 / -1; color: var(--rd-muted); }
-.preorder-request-card { border-color: #f1c27b; }
-#refreshPreorders:disabled { opacity: .55; }
-@media (max-width: 760px) {
-  .catalogue-tools, .preorder-catalogue-tools { grid-template-columns: 1fr; }
-  .shared-dish-row { grid-template-columns: 1fr; }
-  .shared-dish-controls { grid-template-columns: minmax(0, 1fr) minmax(100px, .7fr); }
-  .shared-dish-controls .btn { grid-column: 1 / -1; width: 100%; }
+.shared-dish-info strong {
+  display: block;
+  color: var(--rd-dark);
 }
-
+.shared-dish-info small,
+.shared-dish-info p {
+  color: var(--rd-muted);
+  margin: 5px 0 0;
+}
+.shared-dish-controls {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(110px, 0.7fr) auto;
+  gap: 9px;
+  align-items: end;
+}
+.shared-dish-controls label {
+  font-size: 0.83rem;
+  font-weight: 700;
+  display: grid;
+  gap: 5px;
+}
+.catalogue-availability-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 7px !important;
+  padding-bottom: 10px;
+}
+.catalogue-availability-toggle input {
+  width: 18px;
+  height: 18px;
+}
+.shared-dish-controls .btn {
+  padding: 10px 14px;
+}
+.shared-dish-feedback {
+  grid-column: 1 / -1;
+  color: var(--rd-muted);
+}
+.preorder-request-card {
+  border-color: #f1c27b;
+}
+#refreshPreorders:disabled {
+  opacity: 0.55;
+}
+@media (max-width: 760px) {
+  .catalogue-tools,
+  .preorder-catalogue-tools {
+    grid-template-columns: 1fr;
+  }
+  .shared-dish-row {
+    grid-template-columns: 1fr;
+  }
+  .shared-dish-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(100px, 0.7fr);
+  }
+  .shared-dish-controls .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
 
 /* Daily availability: quick one-tap controls for saved everyday dishes. */
 .daily-availability-list {
@@ -563,7 +613,7 @@ body[data-page="restaurant-dashboard"] {
   color: var(--rd-muted);
 }
 .daily-status {
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: #27663c;
 }
@@ -582,7 +632,6 @@ body[data-page="restaurant-dashboard"] {
     width: 100%;
   }
 }
-
 
 /* Compact list controls keep long restaurant menus manageable on phones and desktop. */
 .list-tools {
@@ -609,7 +658,7 @@ body[data-page="restaurant-dashboard"] {
 }
 .list-hint {
   color: var(--rd-muted);
-  font-size: .85rem;
+  font-size: 0.85rem;
   line-height: 1.45;
 }
 .list-toggle {
@@ -625,7 +674,6 @@ body[data-page="restaurant-dashboard"] {
     width: 100%;
   }
 }
-
 
 .order-report-alert {
   display: block;
@@ -643,33 +691,88 @@ body[data-page="restaurant-dashboard"] {
   white-space: pre-wrap;
 }
 
-
-.restaurant-notification { position: relative; display: inline-flex; }
-.restaurant-notification-button {
-  position: relative; display: inline-grid; place-items: center; width: 42px; height: 42px;
-  border: 1px solid var(--rd-line); border-radius: 50%; background: #fff; color: var(--rd-dark);
-  font-size: 23px; cursor: pointer;
+.restaurant-notification {
+  position: relative;
+  display: inline-flex;
 }
-.restaurant-notification-button:hover { background: var(--rd-soft); }
+.restaurant-notification-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--rd-line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--rd-dark);
+  font-size: 23px;
+  cursor: pointer;
+}
+.restaurant-notification-button:hover {
+  background: var(--rd-soft);
+}
 .restaurant-notification-dot {
-  position: absolute; top: 5px; right: 5px; width: 10px; height: 10px;
-  border: 2px solid #fff; border-radius: 50%; background: #e33131;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #e33131;
 }
 .restaurant-notification-dropdown {
-  position: absolute; z-index: 1000; top: calc(100% + 10px); right: 0; width: min(350px, calc(100vw - 28px));
-  max-height: 390px; overflow-y: auto; padding: 8px; border: 1px solid var(--rd-line);
-  border-radius: 14px; background: #fff; box-shadow: 0 16px 45px #10261924;
+  position: absolute;
+  z-index: 1000;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(350px, calc(100vw - 28px));
+  max-height: 390px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--rd-line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 45px #10261924;
 }
-.restaurant-notification-dropdown[hidden], .restaurant-notification-dot[hidden] { display: none; }
-.restaurant-notification-heading { padding: 10px 11px; font-size: .9rem; font-weight: 800; color: var(--rd-dark); }
+.restaurant-notification-dropdown[hidden],
+.restaurant-notification-dot[hidden] {
+  display: none;
+}
+.restaurant-notification-heading {
+  padding: 10px 11px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--rd-dark);
+}
 .restaurant-notification-item {
-  display: grid; gap: 5px; width: 100%; padding: 11px; text-align: left; border: 0; border-radius: 9px;
-  background: #fff; cursor: pointer; color: #26372b;
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 11px;
+  text-align: left;
+  border: 0;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  color: #26372b;
 }
-.restaurant-notification-item:hover { background: var(--rd-soft); }
-.restaurant-notification-item.is-unread { background: #fff4f3; }
-.restaurant-notification-item strong { font-size: .86rem; }
-.restaurant-notification-item span, .restaurant-notification-empty { margin: 0; color: var(--rd-muted); font-size: .75rem; line-height: 1.45; }
+.restaurant-notification-item:hover {
+  background: var(--rd-soft);
+}
+.restaurant-notification-item.is-unread {
+  background: #fff4f3;
+}
+.restaurant-notification-item strong {
+  font-size: 0.86rem;
+}
+.restaurant-notification-item span,
+.restaurant-notification-empty {
+  margin: 0;
+  color: var(--rd-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
 @media (max-width: 520px) {
   .restaurant-notification {
     position: static;
@@ -703,13 +806,13 @@ body[data-page="restaurant-dashboard"] {
   }
 
   .restaurant-notification-item strong {
-    font-size: .9rem;
+    font-size: 0.9rem;
     line-height: 1.35;
   }
 
   .restaurant-notification-item span,
   .restaurant-notification-empty {
-    font-size: .8rem;
+    font-size: 0.8rem;
     line-height: 1.5;
   }
 }

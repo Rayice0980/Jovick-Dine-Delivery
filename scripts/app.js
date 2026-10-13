@@ -1,6 +1,19 @@
 const FOOD = [];
 const money = (n) => "₦" + Number(n).toLocaleString("en-NG");
-let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); return Array.isArray(saved) ? saved.filter((item) => item?.preorderRequestId || FOOD.some((food) => Number(food.id) === Number(item.id))) : []; } catch { return []; } })(),
+let cart = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+      return Array.isArray(saved)
+        ? saved.filter(
+            (item) =>
+              item?.preorderRequestId ||
+              FOOD.some((food) => Number(food.id) === Number(item.id)),
+          )
+        : [];
+    } catch {
+      return [];
+    }
+  })(),
   activeCategory = "All",
   searchTerm = "";
 const page = document.body.dataset.page || "home";
@@ -52,11 +65,15 @@ function foodCard(f) {
     '</span></div><div class="food-body"><div class="food-title-row"><h3>' +
     f.name +
     '</h3><span class="food-rating">' +
-    (f.rating === "New" ? "New" : "★ " + f.rating + " (" + f.ratingCount + ")") +
+    (f.rating === "New"
+      ? "New"
+      : "★ " + f.rating + " (" + f.ratingCount + ")") +
     '</span></div><p class="food-description">' +
     f.desc +
-    '</p>' +
-    (f.restaurantName ? '<p class="food-restaurant-name">By ' + f.restaurantName + '</p>' : '') +
+    "</p>" +
+    (f.restaurantName
+      ? '<p class="food-restaurant-name">By ' + f.restaurantName + "</p>"
+      : "") +
     '<div class="food-bottom"><span class="price">' +
     money(f.price) +
     '</span><button class="add-btn" data-add="' +
@@ -79,14 +96,20 @@ function renderFoodGrid(target, limit) {
   if (limit) items = items.slice(0, limit);
   el.innerHTML = items.length
     ? items.map(foodCard).join("")
-    : "<div class=\"menu-empty-state\"><h3>No dishes available yet</h3><p>Approved food businesses will publish their menus here. Please check back soon.</p></div>";
+    : '<div class="menu-empty-state"><h3>No dishes available yet</h3><p>Approved food businesses will publish their menus here. Please check back soon.</p></div>';
 }
 function cartItemKey(item) {
-  return item.preorderRequestId ? "preorder:" + item.preorderRequestId : String(item.id);
+  return item.preorderRequestId
+    ? "preorder:" + item.preorderRequestId
+    : String(item.id);
 }
 function persist() {
   localStorage.setItem("jovick-cart", JSON.stringify(cart));
-  document.querySelectorAll("#cartCount").forEach((e) => (e.textContent = cart.reduce((s, i) => s + Number(i.qty || 0), 0)));
+  document
+    .querySelectorAll("#cartCount")
+    .forEach(
+      (e) => (e.textContent = cart.reduce((s, i) => s + Number(i.qty || 0), 0)),
+    );
   renderCart();
 }
 function toast(msg) {
@@ -100,7 +123,9 @@ function toast(msg) {
 function addToCart(id) {
   const f = FOOD.find((x) => x.id === id);
   if (!f) return;
-  const item = cart.find((x) => !x.preorderRequestId && Number(x.id) === Number(id));
+  const item = cart.find(
+    (x) => !x.preorderRequestId && Number(x.id) === Number(id),
+  );
   if (item) item.qty++;
   else cart.push({ id, qty: 1 });
   persist();
@@ -111,7 +136,8 @@ function changeQty(key, d) {
   const item = cart.find((entry) => cartItemKey(entry) === String(key));
   if (!item) return;
   item.qty = Number(item.qty) + d;
-  if (item.qty <= 0) cart = cart.filter((entry) => cartItemKey(entry) !== String(key));
+  if (item.qty <= 0)
+    cart = cart.filter((entry) => cartItemKey(entry) !== String(key));
   persist();
 }
 function removeFromCart(key) {
@@ -122,55 +148,119 @@ function removeFromCart(key) {
 function renderCart() {
   const root = document.getElementById("cartContents");
   if (!root) return;
-  cart = cart.filter((item) => item?.preorderRequestId || FOOD.some((food) => Number(food.id) === Number(item.id)));
-  const entries = cart.map((item) => {
-    const preorder = Boolean(item.preorderRequestId);
-    const food = preorder ? { name: item.name || "Accepted pre-order", price: Number(item.price || 0), restaurantName: item.restaurantName || "The accepting business" } : FOOD.find((entry) => Number(entry.id) === Number(item.id));
-    return food ? { item, food, preorder, key: cartItemKey(item) } : null;
-  }).filter(Boolean);
-  const count = entries.reduce((sum, entry) => sum + Number(entry.item.qty || 0), 0);
-  const subtotal = entries.reduce((sum, entry) => sum + Number(entry.food.price) * Number(entry.item.qty), 0);
+  cart = cart.filter(
+    (item) =>
+      item?.preorderRequestId ||
+      FOOD.some((food) => Number(food.id) === Number(item.id)),
+  );
+  const entries = cart
+    .map((item) => {
+      const preorder = Boolean(item.preorderRequestId);
+      const food = preorder
+        ? {
+            name: item.name || "Accepted pre-order",
+            price: Number(item.price || 0),
+            restaurantName: item.restaurantName || "The accepting business",
+          }
+        : FOOD.find((entry) => Number(entry.id) === Number(item.id));
+      return food ? { item, food, preorder, key: cartItemKey(item) } : null;
+    })
+    .filter(Boolean);
+  const count = entries.reduce(
+    (sum, entry) => sum + Number(entry.item.qty || 0),
+    0,
+  );
+  const subtotal = entries.reduce(
+    (sum, entry) => sum + Number(entry.food.price) * Number(entry.item.qty),
+    0,
+  );
   const countHeading = document.getElementById("cartCountHeading");
   if (countHeading) countHeading.textContent = count ? "(" + count + ")" : "";
-  document.querySelectorAll("#cartCount").forEach((node) => (node.textContent = String(count)));
+  document
+    .querySelectorAll("#cartCount")
+    .forEach((node) => (node.textContent = String(count)));
   root.replaceChildren();
   if (!entries.length) {
-    const empty = document.createElement("div"); empty.className = "empty-cart";
-    const icon = document.createElement("span"); icon.textContent = "🥡";
-    const title = document.createElement("h3"); title.textContent = "Your bag is taking a break";
-    const copy = document.createElement("p"); copy.textContent = "Add a few favourites and we’ll get things ready.";
-    const link = document.createElement("a"); link.className = "btn"; link.href = "foods.html"; link.textContent = "Explore the menu";
-    empty.append(icon, title, copy, link); root.append(empty); return;
+    const empty = document.createElement("div");
+    empty.className = "empty-cart";
+    const icon = document.createElement("span");
+    icon.textContent = "🥡";
+    const title = document.createElement("h3");
+    title.textContent = "Your bag is taking a break";
+    const copy = document.createElement("p");
+    copy.textContent = "Add a few favourites and we’ll get things ready.";
+    const link = document.createElement("a");
+    link.className = "btn";
+    link.href = "foods.html";
+    link.textContent = "Explore the menu";
+    empty.append(icon, title, copy, link);
+    root.append(empty);
+    return;
   }
   entries.forEach(({ item, food, preorder, key }) => {
-    const row = document.createElement("div"); row.className = "cart-item";
+    const row = document.createElement("div");
+    row.className = "cart-item";
     const details = document.createElement("div");
-    const name = document.createElement("strong"); name.textContent = food.name;
-    const unit = document.createElement("small"); unit.textContent = money(food.price) + " each" + (preorder ? " · Private pre-order for " + food.restaurantName : "");
-    const quantity = document.createElement("div"); quantity.className = "quantity";
+    const name = document.createElement("strong");
+    name.textContent = food.name;
+    const unit = document.createElement("small");
+    unit.textContent =
+      money(food.price) +
+      " each" +
+      (preorder ? " · Private pre-order for " + food.restaurantName : "");
+    const quantity = document.createElement("div");
+    quantity.className = "quantity";
     if (preorder) {
       quantity.textContent = "Quantity agreed with business: " + item.qty;
     } else {
-      const minus = document.createElement("button"); minus.type = "button"; minus.dataset.qty = key; minus.dataset.delta = "-1"; minus.setAttribute("aria-label", "Remove one"); minus.textContent = "−";
-      const amount = document.createElement("span"); amount.textContent = String(item.qty);
-      const plus = document.createElement("button"); plus.type = "button"; plus.dataset.qty = key; plus.dataset.delta = "1"; plus.setAttribute("aria-label", "Add one"); plus.textContent = "+";
+      const minus = document.createElement("button");
+      minus.type = "button";
+      minus.dataset.qty = key;
+      minus.dataset.delta = "-1";
+      minus.setAttribute("aria-label", "Remove one");
+      minus.textContent = "−";
+      const amount = document.createElement("span");
+      amount.textContent = String(item.qty);
+      const plus = document.createElement("button");
+      plus.type = "button";
+      plus.dataset.qty = key;
+      plus.dataset.delta = "1";
+      plus.setAttribute("aria-label", "Add one");
+      plus.textContent = "+";
       quantity.append(minus, amount, plus);
     }
     details.append(name, unit, quantity);
     if (!preorder) {
-      const remove = document.createElement("button"); remove.type = "button"; remove.dataset.remove = key; remove.textContent = "Remove dish";
-      remove.style.cssText = "margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0";
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.dataset.remove = key;
+      remove.textContent = "Remove dish";
+      remove.style.cssText =
+        "margin-top:8px;border:0;background:transparent;color:#a13b2a;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0";
       details.append(remove);
     }
-    const line = document.createElement("strong"); line.textContent = money(food.price * Number(item.qty));
-    row.append(details, line); root.append(row);
+    const line = document.createElement("strong");
+    line.textContent = money(food.price * Number(item.qty));
+    row.append(details, line);
+    root.append(row);
   });
-  const total = document.createElement("div"); total.className = "cart-total";
-  const label = document.createElement("span"); label.textContent = "Subtotal";
-  const amount = document.createElement("span"); amount.textContent = money(subtotal);
-  total.append(label, amount); root.append(total);
-  const help = document.createElement("p"); help.className = "cart-help"; help.textContent = "Delivery fee is calculated after your address is entered. Checkout does not process payment.";
-  const checkout = document.createElement("a"); checkout.className = "btn"; checkout.href = "checkout.html"; checkout.style.width = "100%"; checkout.textContent = "Continue to checkout ↗";
+  const total = document.createElement("div");
+  total.className = "cart-total";
+  const label = document.createElement("span");
+  label.textContent = "Subtotal";
+  const amount = document.createElement("span");
+  amount.textContent = money(subtotal);
+  total.append(label, amount);
+  root.append(total);
+  const help = document.createElement("p");
+  help.className = "cart-help";
+  help.textContent =
+    "Delivery fee is calculated after your address is entered. Checkout does not process payment.";
+  const checkout = document.createElement("a");
+  checkout.className = "btn";
+  checkout.href = "checkout.html";
+  checkout.style.width = "100%";
+  checkout.textContent = "Continue to checkout ↗";
   root.append(help, checkout);
 }
 function openCart() {
@@ -191,7 +281,8 @@ function boot() {
       if (bagButton) {
         const notification = document.createElement("div");
         notification.className = "restaurant-notification";
-        notification.innerHTML = '<button type="button" class="restaurant-notification-button" id="restaurantNotificationButton" aria-label="Notifications" aria-expanded="false"><span aria-hidden="true">🔔</span><span class="restaurant-notification-dot" id="restaurantNotificationDot" hidden></span></button><div class="restaurant-notification-dropdown" id="restaurantNotificationDropdown" hidden><div class="restaurant-notification-heading">Recent activity</div><div id="restaurantNotificationItems"><p class="restaurant-notification-empty">No recent orders or pre-orders.</p></div></div>';
+        notification.innerHTML =
+          '<button type="button" class="restaurant-notification-button" id="restaurantNotificationButton" aria-label="Notifications" aria-expanded="false"><span aria-hidden="true">🔔</span><span class="restaurant-notification-dot" id="restaurantNotificationDot" hidden></span></button><div class="restaurant-notification-dropdown" id="restaurantNotificationDropdown" hidden><div class="restaurant-notification-heading">Recent activity</div><div id="restaurantNotificationItems"><p class="restaurant-notification-empty">No recent orders or pre-orders.</p></div></div>';
         bagButton.replaceWith(notification);
       }
     }
@@ -248,7 +339,10 @@ function boot() {
     if (note) note.textContent = msg;
     form.reset();
   });
-  if (page !== "restaurant-dashboard" && new URLSearchParams(location.search).get("checkout") === "1")
+  if (
+    page !== "restaurant-dashboard" &&
+    new URLSearchParams(location.search).get("checkout") === "1"
+  )
     setTimeout(openCart, 250);
 }
 window.jovickSetMenu = function (items) {
@@ -260,12 +354,23 @@ window.jovickSetMenu = function (items) {
   } catch {
     cart = [];
   }
-  cart = cart.filter((item) =>
-    (item?.preorderRequestId || FOOD.some((food) => Number(food.id) === Number(item.id))) &&
-    Number.isInteger(Number(item.qty)) && Number(item.qty) > 0
-  ).map((item) => item.preorderRequestId
-    ? { ...item, qty: Number(item.qty), id: "preorder:" + item.preorderRequestId }
-    : { id: Number(item.id), qty: Number(item.qty) });
+  cart = cart
+    .filter(
+      (item) =>
+        (item?.preorderRequestId ||
+          FOOD.some((food) => Number(food.id) === Number(item.id))) &&
+        Number.isInteger(Number(item.qty)) &&
+        Number(item.qty) > 0,
+    )
+    .map((item) =>
+      item.preorderRequestId
+        ? {
+            ...item,
+            qty: Number(item.qty),
+            id: "preorder:" + item.preorderRequestId,
+          }
+        : { id: Number(item.id), qty: Number(item.qty) },
+    );
   persist();
   renderFoodGrid("foodGrid", document.body.dataset.page === "home" ? 6 : null);
 };

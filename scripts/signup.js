@@ -3,7 +3,9 @@ import { supabase, supabaseConfigured } from "./supabase-client.js";
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("signupForm");
   const businessFields = document.getElementById("restaurantFields");
-  const accountTypeInputs = document.querySelectorAll('input[name="accountType"]');
+  const accountTypeInputs = document.querySelectorAll(
+    'input[name="accountType"]',
+  );
   const password = document.getElementById("signupPassword");
   const confirmPassword = document.getElementById("confirmPassword");
   const passwordError = document.getElementById("passwordMatchError");
@@ -19,14 +21,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateAccountFields() {
-    const selectedType = document.querySelector('input[name="accountType"]:checked');
+    const selectedType = document.querySelector(
+      'input[name="accountType"]:checked',
+    );
     const isRestaurant = selectedType && selectedType.value === "restaurant";
     if (!businessFields) return;
     businessFields.hidden = !isRestaurant;
     businessFields.disabled = !isRestaurant;
-    businessFields.querySelectorAll("input, select, textarea").forEach(function (field) {
-      field.required = isRestaurant;
-    });
+    businessFields
+      .querySelectorAll("input, select, textarea")
+      .forEach(function (field) {
+        field.required = isRestaurant;
+      });
   }
 
   accountTypeInputs.forEach(function (input) {
@@ -50,7 +56,9 @@ document.addEventListener("DOMContentLoaded", function () {
     event.preventDefault();
 
     if (password.value !== confirmPassword.value) {
-      if (passwordError) passwordError.textContent = "Your passwords do not match. Please try again.";
+      if (passwordError)
+        passwordError.textContent =
+          "Your passwords do not match. Please try again.";
       confirmPassword.setAttribute("aria-invalid", "true");
       confirmPassword.focus();
       return;
@@ -59,11 +67,16 @@ document.addEventListener("DOMContentLoaded", function () {
     confirmPassword.removeAttribute("aria-invalid");
 
     if (!supabaseConfigured || !supabase) {
-      showMessage("Supabase is not configured yet. Add your project's URL and publishable key in scripts/supabase-config.js before creating accounts.", true);
+      showMessage(
+        "Supabase is not configured yet. Add your project's URL and publishable key in scripts/supabase-config.js before creating accounts.",
+        true,
+      );
       return;
     }
 
-    const selectedType = document.querySelector('input[name="accountType"]:checked');
+    const selectedType = document.querySelector(
+      'input[name="accountType"]:checked',
+    );
     const accountType = selectedType ? selectedType.value : "customer";
     const metadata = {
       full_name: document.getElementById("fullName").value.trim(),
@@ -72,9 +85,13 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     if (accountType === "restaurant") {
-      metadata.business_name = document.getElementById("businessName").value.trim();
+      metadata.business_name = document
+        .getElementById("businessName")
+        .value.trim();
       metadata.business_type = document.getElementById("businessType").value;
-      metadata.business_address = document.getElementById("businessAddress").value.trim();
+      metadata.business_address = document
+        .getElementById("businessAddress")
+        .value.trim();
     }
 
     if (submitButton) {
@@ -88,7 +105,10 @@ document.addEventListener("DOMContentLoaded", function () {
         email: document.getElementById("signupEmail").value.trim(),
         password: password.value,
         options: {
-          emailRedirectTo: new URL("login.html?confirmed=1", window.location.href).toString(),
+          emailRedirectTo: new URL(
+            "login.html?confirmed=1",
+            window.location.href,
+          ).toString(),
           data: metadata,
         },
       });
@@ -100,19 +120,24 @@ document.addEventListener("DOMContentLoaded", function () {
           accountType === "restaurant"
             ? "Your account has been created. Your restaurant registration is pending review before restaurant features can be enabled."
             : "Your customer account has been created. You can now sign in.",
-          false
+          false,
         );
       } else {
         showMessage(
           "Registration received. Check your email for the confirmation link. " +
-          (accountType === "restaurant" ? "Your restaurant will remain pending review until it is approved." : ""),
-          false
+            (accountType === "restaurant"
+              ? "Your restaurant will remain pending review until it is approved."
+              : ""),
+          false,
         );
       }
       form.reset();
       updateAccountFields();
     } catch (error) {
-      showMessage(error.message || "We could not create your account. Please try again.", true);
+      showMessage(
+        error.message || "We could not create your account. Please try again.",
+        true,
+      );
     } finally {
       if (submitButton) {
         submitButton.disabled = false;

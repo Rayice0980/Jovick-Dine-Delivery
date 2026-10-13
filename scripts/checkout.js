@@ -9,8 +9,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cart = () => {
     try {
       const items = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
-      return Array.isArray(items) ? items.filter((x) => (x.preorderRequestId || Number.isInteger(Number(x.id))) && Number.isInteger(Number(x.qty)) && Number(x.qty) > 0) : [];
-    } catch { return []; }
+      return Array.isArray(items)
+        ? items.filter(
+            (x) =>
+              (x.preorderRequestId || Number.isInteger(Number(x.id))) &&
+              Number.isInteger(Number(x.qty)) &&
+              Number(x.qty) > 0,
+          )
+        : [];
+    } catch {
+      return [];
+    }
   };
   function showNote(text, isError = false) {
     note.textContent = text;
@@ -24,37 +33,74 @@ document.addEventListener("DOMContentLoaded", async () => {
       const p = document.createElement("p");
       p.append(document.createTextNode("Your bag is empty. "));
       const link = document.createElement("a");
-      link.className = "text-link"; link.href = "foods.html"; link.textContent = "Browse the menu";
-      p.append(link); summary.append(p); submitButton.disabled = true; return;
+      link.className = "text-link";
+      link.href = "foods.html";
+      link.textContent = "Browse the menu";
+      p.append(link);
+      summary.append(p);
+      submitButton.disabled = true;
+      return;
     }
     let subtotal = 0;
     items.forEach((item) => {
-      const food = item.preorderRequestId ? { name: item.name || "Accepted pre-order", price: Number(item.price || 0), restaurantName: item.restaurantName || "Accepting business" } : menuItems.get(Number(item.id));
+      const food = item.preorderRequestId
+        ? {
+            name: item.name || "Accepted pre-order",
+            price: Number(item.price || 0),
+            restaurantName: item.restaurantName || "Accepting business",
+          }
+        : menuItems.get(Number(item.id));
       if (!food) return;
-      const qty = Number(item.qty), line = food.price * qty;
+      const qty = Number(item.qty),
+        line = food.price * qty;
       subtotal += line;
-      const row = document.createElement("div"); row.className = "cart-item";
+      const row = document.createElement("div");
+      row.className = "cart-item";
       const details = document.createElement("div");
-      const name = document.createElement("strong"); name.textContent = food.name;
-      const quantity = document.createElement("small"); quantity.textContent = "Qty: " + qty + (item.preorderRequestId ? " · Private pre-order for " + food.restaurantName : "");
+      const name = document.createElement("strong");
+      name.textContent = food.name;
+      const quantity = document.createElement("small");
+      quantity.textContent =
+        "Qty: " +
+        qty +
+        (item.preorderRequestId
+          ? " · Private pre-order for " + food.restaurantName
+          : "");
       details.append(name, quantity);
-      const price = document.createElement("strong"); price.textContent = money(line);
-      row.append(details, price); summary.append(row);
+      const price = document.createElement("strong");
+      price.textContent = money(line);
+      row.append(details, price);
+      summary.append(row);
     });
-    const total = document.createElement("div"); total.className = "cart-total";
-    const label = document.createElement("span"); label.textContent = "Subtotal";
-    const amount = document.createElement("strong"); amount.textContent = money(subtotal);
-    total.append(label, amount); summary.append(total);
-    if (!subtotal) { submitButton.disabled = true; showNote("Your cart items could not be matched to the current menu. Return to the menu and add them again.", true); }
+    const total = document.createElement("div");
+    total.className = "cart-total";
+    const label = document.createElement("span");
+    label.textContent = "Subtotal";
+    const amount = document.createElement("strong");
+    amount.textContent = money(subtotal);
+    total.append(label, amount);
+    summary.append(total);
+    if (!subtotal) {
+      submitButton.disabled = true;
+      showNote(
+        "Your cart items could not be matched to the current menu. Return to the menu and add them again.",
+        true,
+      );
+    }
   }
 
   if (!supabaseConfigured || !supabase) {
-    showNote("Ordering is temporarily unavailable because the database connection is not configured.", true);
-    submitButton.disabled = true; return;
+    showNote(
+      "Ordering is temporarily unavailable because the database connection is not configured.",
+      true,
+    );
+    submitButton.disabled = true;
+    return;
   }
   let menuItems = new Map();
   try {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
     if (sessionError) throw sessionError;
     const user = sessionData.session?.user;
     if (!user) {
@@ -62,73 +108,156 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     const [profileResult, menuResult] = await Promise.all([
-      supabase.from("profiles").select("full_name, phone, account_type").eq("id", user.id).single(),
-      supabase.rpc("get_public_available_menu")
+      supabase
+        .from("profiles")
+        .select("full_name, phone, account_type")
+        .eq("id", user.id)
+        .single(),
+      supabase.rpc("get_public_available_menu"),
     ]);
     if (profileResult.error) throw profileResult.error;
     if (menuResult.error) throw menuResult.error;
-    if (profileResult.data.account_type !== "customer") throw new Error("Only customer accounts can place customer orders.");
-    document.getElementById("checkoutName").value = profileResult.data.full_name || "";
-    document.getElementById("checkoutPhone").value = profileResult.data.phone || "";
+    if (profileResult.data.account_type !== "customer")
+      throw new Error("Only customer accounts can place customer orders.");
+    document.getElementById("checkoutName").value =
+      profileResult.data.full_name || "";
+    document.getElementById("checkoutPhone").value =
+      profileResult.data.phone || "";
     document.getElementById("checkoutEmail").value = user.email || "";
-    menuItems = new Map(menuResult.data.map((food) => [Number(food.id), { name: food.name, price: Number(food.price) }]));
+    menuItems = new Map(
+      menuResult.data.map((food) => [
+        Number(food.id),
+        { name: food.name, price: Number(food.price) },
+      ]),
+    );
 
     await syncAcceptedPreordersInBag(user.id);
 
     const requestedFor = document.getElementById("requestedFor");
     if (requestedFor) {
       const minTime = new Date(Date.now() + 15 * 60 * 1000);
-      requestedFor.min = new Date(minTime.getTime() - minTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      requestedFor.max = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      requestedFor.min = new Date(
+        minTime.getTime() - minTime.getTimezoneOffset() * 60000,
+      )
+        .toISOString()
+        .slice(0, 16);
+      requestedFor.max = new Date(
+        Date.now() +
+          30 * 24 * 60 * 60 * 1000 -
+          new Date().getTimezoneOffset() * 60000,
+      )
+        .toISOString()
+        .slice(0, 16);
     }
     renderSummary(menuItems);
   } catch (error) {
-    showNote(error.message || "We couldn't prepare checkout. Please refresh and try again.", true);
-    submitButton.disabled = true; return;
+    showNote(
+      error.message ||
+        "We couldn't prepare checkout. Please refresh and try again.",
+      true,
+    );
+    submitButton.disabled = true;
+    return;
   }
 
   async function syncAcceptedPreordersInBag(customerId) {
-    const { data: requestResult, error: requestError } = await supabase.rpc("get_my_preorder_bag");
+    const { data: requestResult, error: requestError } = await supabase.rpc(
+      "get_my_preorder_bag",
+    );
     if (requestError) throw requestError;
     const requests = requestResult || [];
     let savedCart = [];
-    try { const parsed = JSON.parse(localStorage.getItem("jovick-cart") || "[]"); savedCart = Array.isArray(parsed) ? parsed : []; } catch { savedCart = []; }
-    const orderedIds = new Set(requests.filter((request) => request.status === "ordered").map((request) => String(request.request_id)));
-    savedCart = savedCart.filter((item) => !item.preorderRequestId || !orderedIds.has(String(item.preorderRequestId)));
-    requests.filter((request) => request.status === "accepted" && Number(request.accepted_price) > 0).forEach((request) => {
-      const requestId = String(request.request_id);
-      const privateItem = { id: "preorder:" + requestId, preorderRequestId: requestId, qty: Number(request.quantity), name: request.dish_name, price: Number(request.accepted_price), restaurantId: request.accepted_restaurant_id, restaurantName: request.restaurant_name || "Accepting business" };
-      if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
-      const existing = savedCart.find((item) => String(item.preorderRequestId || "") === requestId);
-      if (existing) Object.assign(existing, privateItem); else savedCart.push(privateItem);
-    });
+    try {
+      const parsed = JSON.parse(localStorage.getItem("jovick-cart") || "[]");
+      savedCart = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      savedCart = [];
+    }
+    const orderedIds = new Set(
+      requests
+        .filter((request) => request.status === "ordered")
+        .map((request) => String(request.request_id)),
+    );
+    savedCart = savedCart.filter(
+      (item) =>
+        !item.preorderRequestId ||
+        !orderedIds.has(String(item.preorderRequestId)),
+    );
+    requests
+      .filter(
+        (request) =>
+          request.status === "accepted" && Number(request.accepted_price) > 0,
+      )
+      .forEach((request) => {
+        const requestId = String(request.request_id);
+        const privateItem = {
+          id: "preorder:" + requestId,
+          preorderRequestId: requestId,
+          qty: Number(request.quantity),
+          name: request.dish_name,
+          price: Number(request.accepted_price),
+          restaurantId: request.accepted_restaurant_id,
+          restaurantName: request.restaurant_name || "Accepting business",
+        };
+        if (!Number.isInteger(privateItem.qty) || privateItem.qty < 1) return;
+        const existing = savedCart.find(
+          (item) => String(item.preorderRequestId || "") === requestId,
+        );
+        if (existing) Object.assign(existing, privateItem);
+        else savedCart.push(privateItem);
+      });
     localStorage.setItem("jovick-cart", JSON.stringify(savedCart));
-    window.dispatchEvent(new CustomEvent("jovick:cart-updated", { detail: { source: "accepted-preorder" } }));
+    window.dispatchEvent(
+      new CustomEvent("jovick:cart-updated", {
+        detail: { source: "accepted-preorder" },
+      }),
+    );
     return savedCart;
   }
   async function refreshAcceptedPreordersInCheckout() {
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const user = sessionData.session?.user;
       if (!user) return;
       await syncAcceptedPreordersInBag(user.id);
       renderSummary(menuItems);
     } catch (error) {
-      console.error("Accepted pre-orders could not be refreshed during checkout.", error);
+      console.error(
+        "Accepted pre-orders could not be refreshed during checkout.",
+        error,
+      );
     }
   }
   window.setInterval(() => {
-    if (document.visibilityState === "visible") refreshAcceptedPreordersInCheckout();
+    if (document.visibilityState === "visible")
+      refreshAcceptedPreordersInCheckout();
   }, 30000);
   window.addEventListener("focus", refreshAcceptedPreordersInCheckout);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const items = cart();
-    if (!items.length) { showNote("Your cart is empty. Please add a meal before placing your order.", true); return; }
-    if (items.some((item) => item.preorderRequestId ? (!item.name || !Number(item.price)) : !menuItems.has(Number(item.id)))) {
-      showNote("One or more meals are no longer available. Return to the menu and add them again.", true); return;
+    if (!items.length) {
+      showNote(
+        "Your cart is empty. Please add a meal before placing your order.",
+        true,
+      );
+      return;
+    }
+    if (
+      items.some((item) =>
+        item.preorderRequestId
+          ? !item.name || !Number(item.price)
+          : !menuItems.has(Number(item.id)),
+      )
+    ) {
+      showNote(
+        "One or more meals are no longer available. Return to the menu and add them again.",
+        true,
+      );
+      return;
     }
     const values = new FormData(form);
     const payload = {
@@ -139,44 +268,95 @@ document.addEventListener("DOMContentLoaded", async () => {
       p_delivery_area: String(values.get("area") || "").trim(),
       p_payment_method: String(values.get("payment") || "").trim(),
       p_delivery_notes: String(values.get("notes") || "").trim(),
-      p_items: items.map((item) => item.preorderRequestId ? ({ preorder_request_id: item.preorderRequestId, qty: Number(item.qty) }) : ({ id: Number(item.id), qty: Number(item.qty) })),
-      p_requested_for: values.get("requestedFor") ? new Date(String(values.get("requestedFor"))).toISOString() : null
+      p_items: items.map((item) =>
+        item.preorderRequestId
+          ? {
+              preorder_request_id: item.preorderRequestId,
+              qty: Number(item.qty),
+            }
+          : { id: Number(item.id), qty: Number(item.qty) },
+      ),
+      p_requested_for: values.get("requestedFor")
+        ? new Date(String(values.get("requestedFor"))).toISOString()
+        : null,
     };
-    submitButton.disabled = true; submitButton.setAttribute("aria-busy", "true");
+    submitButton.disabled = true;
+    submitButton.setAttribute("aria-busy", "true");
     showNote("Submitting your order securely…");
     try {
-      const { data, error } = await supabase.rpc("place_customer_orders", payload);
+      const { data, error } = await supabase.rpc(
+        "place_customer_orders",
+        payload,
+      );
       if (error) throw error;
-      const orders = Array.isArray(data) ? data : (data ? [data] : []);
-      if (!orders.length || orders.some(order => !order?.order_number)) {
-        throw new Error("We couldn't confirm all order numbers. Check My Orders before trying again.");
+      const orders = Array.isArray(data) ? data : data ? [data] : [];
+      if (!orders.length || orders.some((order) => !order?.order_number)) {
+        throw new Error(
+          "We couldn't confirm all order numbers. Check My Orders before trying again.",
+        );
       }
       localStorage.removeItem("jovick-cart");
       localStorage.removeItem("jovick-menu-cache");
       form.reset();
-      const success = document.createElement("div"); success.className = "order-success";
-      const heading = document.createElement("h3"); heading.textContent = orders.length > 1 ? "Your orders have been received!" : "Your order has been received!";
+      const success = document.createElement("div");
+      success.className = "order-success";
+      const heading = document.createElement("h3");
+      heading.textContent =
+        orders.length > 1
+          ? "Your orders have been received!"
+          : "Your order has been received!";
       const amount = document.createElement("p");
-      amount.textContent = "Combined order total: " + money(orders.reduce((sum, order) => sum + Number(order.total || 0), 0));
-      const status = document.createElement("p"); status.textContent = "Each business has its own order to confirm and prepare. Payment has not been processed.";
+      amount.textContent =
+        "Combined order total: " +
+        money(orders.reduce((sum, order) => sum + Number(order.total || 0), 0));
+      const status = document.createElement("p");
+      status.textContent =
+        "Each business has its own order to confirm and prepare. Payment has not been processed.";
       const orderList = document.createElement("ul");
-      orders.forEach(order => {
+      orders.forEach((order) => {
         const item = document.createElement("li");
-        item.textContent = (order.restaurant_name || "Business") + " — Order " + order.order_number + " — " + money(order.total) + " — Awaiting confirmation";
+        item.textContent =
+          (order.restaurant_name || "Business") +
+          " — Order " +
+          order.order_number +
+          " — " +
+          money(order.total) +
+          " — Awaiting confirmation";
         orderList.append(item);
       });
       const requestedFor = values.get("requestedFor");
       const schedule = requestedFor ? document.createElement("p") : null;
-      if (schedule) schedule.textContent = "Requested time: " + new Date(String(requestedFor)).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
-      const link = document.createElement("a"); link.className = "btn"; link.href = "dashboard.html#orders"; link.textContent = "View my orders";
+      if (schedule)
+        schedule.textContent =
+          "Requested time: " +
+          new Date(String(requestedFor)).toLocaleString("en-NG", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          });
+      const link = document.createElement("a");
+      link.className = "btn";
+      link.href = "dashboard.html#orders";
+      link.textContent = "View my orders";
       success.append(heading, amount, status, orderList);
       if (schedule) success.append(schedule);
-      success.append(link); summary.replaceChildren(success);
-      showNote(orders.length > 1
-        ? "Your checkout succeeded. Separate orders were sent to " + orders.length + " businesses."
-        : "Order saved successfully. You can view it from your customer dashboard.");
+      success.append(link);
+      summary.replaceChildren(success);
+      showNote(
+        orders.length > 1
+          ? "Your checkout succeeded. Separate orders were sent to " +
+              orders.length +
+              " businesses."
+          : "Order saved successfully. You can view it from your customer dashboard.",
+      );
     } catch (error) {
-      showNote(error.message || "We couldn't place your order. Your cart is still saved; please try again.", true);
-    } finally { submitButton.disabled = false; submitButton.removeAttribute("aria-busy"); }
+      showNote(
+        error.message ||
+          "We couldn't place your order. Your cart is still saved; please try again.",
+        true,
+      );
+    } finally {
+      submitButton.disabled = false;
+      submitButton.removeAttribute("aria-busy");
+    }
   });
 });

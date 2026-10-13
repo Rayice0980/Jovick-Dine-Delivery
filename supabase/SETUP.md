@@ -19,6 +19,7 @@ The project URL and publishable key are already configured in scripts/supabase-c
 ## 2. Database schema and account security
 
 The reviewed SQL file supabase/setup/customer_restaurant_auth.sql has been applied to the dedicated project. It creates:
+
 - public.profiles — one account profile per Supabase Auth user.
 - public.restaurants — restaurant details and approval status.
 - Row Level Security (RLS) policies and restricted database grants.
@@ -29,6 +30,7 @@ The browser cannot choose its own database permissions. The profile's account ty
 ## 3. Finish Auth URL configuration in the dashboard
 
 In the Supabase Dashboard for Jovick Dine Delivery, open Authentication → URL Configuration:
+
 - Set the Site URL to your actual deployed website URL.
 - Add your local Live Server URL (for example, http://127.0.0.1:5500/**) and the deployed site's login page URL to Redirect URLs.
 - Keep email confirmation enabled for real customer accounts.

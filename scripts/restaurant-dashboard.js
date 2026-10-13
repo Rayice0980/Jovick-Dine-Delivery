@@ -27,13 +27,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   // menu_items currently permits only the categories used by the customer menu filters.
   // Map broader catalogue categories into those supported groups before saving.
   function menuCategoryForDish(category) {
-    const supported = ["Rice", "Swallow", "Grills", "Everyday", "Soups", "Sides"];
+    const supported = [
+      "Rice",
+      "Swallow",
+      "Grills",
+      "Everyday",
+      "Soups",
+      "Sides",
+    ];
     if (supported.includes(category)) return category;
     if (category === "Proteins") return "Grills";
     if (category === "Snacks") return "Sides";
     return "Everyday"; // Pasta, noodles, and other catalogue categories.
   }
-  const statusLabels = { received:"Awaiting confirmation", confirmed:"Confirmed", preparing:"Being prepared", out_for_delivery:"Out for delivery", delivered:"Delivered", cancelled:"Cancelled" };
+  const statusLabels = {
+    received: "Awaiting confirmation",
+    confirmed: "Confirmed",
+    preparing: "Being prepared",
+    out_for_delivery: "Out for delivery",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  };
 
   function showNotice(text, error = false) {
     notice.textContent = text;
@@ -59,13 +73,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (!supabaseConfigured || !supabase) {
-    showNotice("Restaurant services are not configured. Please try again later.", true);
+    showNotice(
+      "Restaurant services are not configured. Please try again later.",
+      true,
+    );
     menuForm.hidden = true;
     return;
   }
 
   try {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
     if (sessionError) throw sessionError;
     user = sessionData.session?.user;
     if (!user) {
@@ -73,30 +91,57 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const { data: profile, error: profileError } = await supabase.from("profiles")
-      .select("account_type,full_name").eq("id", user.id).single();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("account_type,full_name")
+      .eq("id", user.id)
+      .single();
     if (profileError) throw profileError;
     if (profile.account_type !== "restaurant") {
       window.location.replace("dashboard.html");
       return;
     }
 
-    const { data: restaurantData, error: restaurantError } = await supabase.from("restaurants")
-      .select("id,name,business_type,business_address,status").eq("owner_id", user.id).maybeSingle();
+    const { data: restaurantData, error: restaurantError } = await supabase
+      .from("restaurants")
+      .select("id,name,business_type,business_address,status")
+      .eq("owner_id", user.id)
+      .maybeSingle();
     if (restaurantError) throw restaurantError;
     restaurant = restaurantData;
     if (!restaurant) {
-      showNotice("We couldn't find a restaurant profile linked to this account. Please contact support.", true);
+      showNotice(
+        "We couldn't find a restaurant profile linked to this account. Please contact support.",
+        true,
+      );
       menuForm.hidden = true;
       return;
     }
-    document.getElementById("restaurantHeading").textContent = restaurant.name || profile.full_name || "Your restaurant dashboard";
+    document.getElementById("restaurantHeading").textContent =
+      restaurant.name || profile.full_name || "Your restaurant dashboard";
 
     if (restaurant.status !== "approved") {
-      showNotice("Your restaurant account is " + restaurant.status + ". Menu editing and order management unlock after an administrator approves your business. You can sign out using the site menu.", false);
+      showNotice(
+        "Your restaurant account is " +
+          restaurant.status +
+          ". Menu editing and order management unlock after an administrator approves your business. You can sign out using the site menu.",
+        false,
+      );
       menuForm.hidden = true;
-      menuList.replaceChildren(safeElement("p", "empty-state", "Your restaurant menu will appear here after approval."));
-      ordersList.replaceChildren(safeElement("p", "empty-state", "Incoming orders will appear here after approval."));
+      menuList.replaceChildren(
+        safeElement(
+          "p",
+          "empty-state",
+          "Your restaurant menu will appear here after approval.",
+        ),
+      );
+      ordersList.replaceChildren(
+        safeElement(
+          "p",
+          "empty-state",
+          "Incoming orders will appear here after approval.",
+        ),
+      );
       document.getElementById("menuCount").textContent = "—";
       document.getElementById("availableCount").textContent = "—";
       document.getElementById("ordersCount").textContent = "—";
@@ -108,53 +153,122 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadPreorderRequests();
     setupRestaurantNotifications();
     await loadOrders();
-    window.setInterval(() => { loadOrders().catch(() => {}); }, 30000);
-    document.getElementById("catalogueSearch")?.addEventListener("input", renderSharedCatalogue);
-    document.getElementById("catalogueCategory")?.addEventListener("change", renderSharedCatalogue);
-    document.getElementById("viewAllCatalogue")?.addEventListener("click", () => {
-      catalogueExpanded = !catalogueExpanded;
-      renderSharedCatalogue();
-    });
-    document.getElementById("dailyAvailabilitySearch")?.addEventListener("input", renderDailyAvailability);
+    window.setInterval(() => {
+      loadOrders().catch(() => {});
+    }, 30000);
+    document
+      .getElementById("catalogueSearch")
+      ?.addEventListener("input", renderSharedCatalogue);
+    document
+      .getElementById("catalogueCategory")
+      ?.addEventListener("change", renderSharedCatalogue);
+    document
+      .getElementById("viewAllCatalogue")
+      ?.addEventListener("click", () => {
+        catalogueExpanded = !catalogueExpanded;
+        renderSharedCatalogue();
+      });
+    document
+      .getElementById("dailyAvailabilitySearch")
+      ?.addEventListener("input", renderDailyAvailability);
     document.getElementById("viewAllDaily")?.addEventListener("click", () => {
       dailyExpanded = !dailyExpanded;
       renderDailyAvailability();
     });
-    document.getElementById("menuItemSearch")?.addEventListener("input", () => loadMenu().catch(error => showNotice(error.message, true)));
+    document
+      .getElementById("menuItemSearch")
+      ?.addEventListener("input", () =>
+        loadMenu().catch((error) => showNotice(error.message, true)),
+      );
     document.getElementById("viewAllMenu")?.addEventListener("click", () => {
       menuExpanded = !menuExpanded;
-      loadMenu().catch(error => showNotice(error.message, true));
+      loadMenu().catch((error) => showNotice(error.message, true));
     });
-    document.getElementById("refreshPreorders")?.addEventListener("click", loadPreorderRequests);
-    window.setInterval(() => { loadPreorderRequests().catch(() => {}); }, 30000);
+    document
+      .getElementById("refreshPreorders")
+      ?.addEventListener("click", loadPreorderRequests);
+    window.setInterval(() => {
+      loadPreorderRequests().catch(() => {});
+    }, 30000);
   } catch (error) {
-    showNotice(error.message || "We couldn't load your restaurant workspace. Please refresh and try again.", true);
+    showNotice(
+      error.message ||
+        "We couldn't load your restaurant workspace. Please refresh and try again.",
+      true,
+    );
   }
-
 
   function renderRestaurantNotifications() {
     const dot = document.getElementById("restaurantNotificationDot");
     const root = document.getElementById("restaurantNotificationItems");
     if (!dot || !root) return;
     const items = [
-      ...notificationOrders.map(order => ({ type: "order", id: String(order.id), title: "Order " + order.order_number, detail: (statusLabels[order.status] || order.status) + " · " + new Date(order.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }), created_at: order.created_at, target: "incomingOrders" })),
-      ...notificationPreorders.map(request => ({ type: "preorder", id: String(request.id), title: "Pre-order: " + request.dish_name, detail: "Pending request · " + new Date(request.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }), created_at: request.created_at, target: "preorderRequests" }))
-    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
-    const hasUnread = items.some(item => new Date(item.created_at).getTime() > notificationSeenAt);
+      ...notificationOrders.map((order) => ({
+        type: "order",
+        id: String(order.id),
+        title: "Order " + order.order_number,
+        detail:
+          (statusLabels[order.status] || order.status) +
+          " · " +
+          new Date(order.created_at).toLocaleString("en-NG", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+        created_at: order.created_at,
+        target: "incomingOrders",
+      })),
+      ...notificationPreorders.map((request) => ({
+        type: "preorder",
+        id: String(request.id),
+        title: "Pre-order: " + request.dish_name,
+        detail:
+          "Pending request · " +
+          new Date(request.created_at).toLocaleString("en-NG", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+        created_at: request.created_at,
+        target: "preorderRequests",
+      })),
+    ]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 8);
+    const hasUnread = items.some(
+      (item) => new Date(item.created_at).getTime() > notificationSeenAt,
+    );
     dot.hidden = !hasUnread;
     root.replaceChildren();
     if (!items.length) {
-      root.append(safeElement("p", "restaurant-notification-empty", "No recent orders or pre-orders."));
+      root.append(
+        safeElement(
+          "p",
+          "restaurant-notification-empty",
+          "No recent orders or pre-orders.",
+        ),
+      );
       return;
     }
-    items.forEach(item => {
-      const button = safeElement("button", "restaurant-notification-item" + (new Date(item.created_at).getTime() > notificationSeenAt ? " is-unread" : ""));
+    items.forEach((item) => {
+      const button = safeElement(
+        "button",
+        "restaurant-notification-item" +
+          (new Date(item.created_at).getTime() > notificationSeenAt
+            ? " is-unread"
+            : ""),
+      );
       button.type = "button";
-      button.append(safeElement("strong", "", item.title), safeElement("span", "", item.detail));
+      button.append(
+        safeElement("strong", "", item.title),
+        safeElement("span", "", item.detail),
+      );
       button.addEventListener("click", () => {
         document.getElementById("restaurantNotificationDropdown").hidden = true;
-        document.getElementById("restaurantNotificationButton")?.setAttribute("aria-expanded", "false");
-        document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document
+          .getElementById("restaurantNotificationButton")
+          ?.setAttribute("aria-expanded", "false");
+        document
+          .getElementById(item.target)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       root.append(button);
     });
@@ -164,19 +278,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     const button = document.getElementById("restaurantNotificationButton");
     const dropdown = document.getElementById("restaurantNotificationDropdown");
     if (!button || !dropdown) return;
-    notificationStorageKey = "jovick-restaurant-notifications-seen:" + restaurant.id;
-    notificationSeenAt = Number(localStorage.getItem(notificationStorageKey) || 0);
+    notificationStorageKey =
+      "jovick-restaurant-notifications-seen:" + restaurant.id;
+    notificationSeenAt = Number(
+      localStorage.getItem(notificationStorageKey) || 0,
+    );
     button.addEventListener("click", () => {
       const opening = dropdown.hidden;
       dropdown.hidden = !opening;
       button.setAttribute("aria-expanded", String(opening));
       if (opening) {
         notificationSeenAt = Date.now();
-        localStorage.setItem(notificationStorageKey, String(notificationSeenAt));
+        localStorage.setItem(
+          notificationStorageKey,
+          String(notificationSeenAt),
+        );
         renderRestaurantNotifications();
       }
     });
-    document.addEventListener("click", event => {
+    document.addEventListener("click", (event) => {
       if (!event.target.closest(".restaurant-notification")) {
         dropdown.hidden = true;
         button.setAttribute("aria-expanded", "false");
@@ -186,138 +306,253 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function loadMenu() {
-    const { data, error } = await supabase.from("menu_items")
-      .select("id,slug,name,category,price,description,image_url,is_available,tag,menu_type")
-      .eq("restaurant_id", restaurant.id).order("sort_order", { ascending: true }).order("name");
+    const { data, error } = await supabase
+      .from("menu_items")
+      .select(
+        "id,slug,name,category,price,description,image_url,is_available,tag,menu_type",
+      )
+      .eq("restaurant_id", restaurant.id)
+      .order("sort_order", { ascending: true })
+      .order("name");
     if (error) throw error;
     menuItems = data || [];
     document.getElementById("menuCount").textContent = String(menuItems.length);
-    document.getElementById("availableCount").textContent = String(menuItems.filter(item => item.is_available).length);
+    document.getElementById("availableCount").textContent = String(
+      menuItems.filter((item) => item.is_available).length,
+    );
     menuList.replaceChildren();
-    const menuTerm = (document.getElementById("menuItemSearch")?.value || "").trim().toLowerCase();
-    const matchingMenuItems = menuItems.filter(item => !menuTerm || (item.name + " " + item.category + " " + (item.description || "")).toLowerCase().includes(menuTerm));
+    const menuTerm = (document.getElementById("menuItemSearch")?.value || "")
+      .trim()
+      .toLowerCase();
+    const matchingMenuItems = menuItems.filter(
+      (item) =>
+        !menuTerm ||
+        (item.name + " " + item.category + " " + (item.description || ""))
+          .toLowerCase()
+          .includes(menuTerm),
+    );
     if (!matchingMenuItems.length) {
-      menuList.append(safeElement("p", "empty-state", "No restaurant-specific dishes yet. Use the form above to add your first menu item."));
+      menuList.append(
+        safeElement(
+          "p",
+          "empty-state",
+          "No restaurant-specific dishes yet. Use the form above to add your first menu item.",
+        ),
+      );
       return;
     }
     // Catalogue-backed everyday dishes are managed only in Daily Availability.
-    const everydayItems = matchingMenuItems.filter(item => item.menu_type === "everyday" && !(item.slug || "").startsWith("catalog-"));
-    const specialItems = matchingMenuItems.filter(item => item.menu_type !== "everyday");
+    const everydayItems = matchingMenuItems.filter(
+      (item) =>
+        item.menu_type === "everyday" &&
+        !(item.slug || "").startsWith("catalog-"),
+    );
+    const specialItems = matchingMenuItems.filter(
+      (item) => item.menu_type !== "everyday",
+    );
     function addMenuSection(title, description, items) {
       const heading = safeElement("div", "menu-section-heading");
-      heading.append(safeElement("h3", "", title), safeElement("p", "", description));
+      heading.append(
+        safeElement("h3", "", title),
+        safeElement("p", "", description),
+      );
       menuList.append(heading);
       if (!items.length) {
-        menuList.append(safeElement("p", "menu-section-empty", "No dishes in this section yet."));
+        menuList.append(
+          safeElement(
+            "p",
+            "menu-section-empty",
+            "No dishes in this section yet.",
+          ),
+        );
         return;
       }
       const visibleItems = menuExpanded || menuTerm ? items : items.slice(0, 4);
-      visibleItems.forEach(item => {
-      const card = safeElement("article", "managed-menu-card");
-      const top = safeElement("div", "managed-menu-top");
-      const copy = document.createElement("div");
-      copy.append(safeElement("span", "menu-category-label", (item.menu_type === "everyday" ? "Everyday menu" : "Special menu") + " · " + item.category));
-      copy.append(safeElement("h3", "", item.name));
-      copy.append(safeElement("p", "", item.description || "No description added."));
-      top.append(copy, safeElement("strong", "menu-price", money(item.price)));
-      const actions = safeElement("div", "menu-card-actions");
-      const status = safeElement("span", "availability" + (item.is_available ? "" : " off"), item.is_available ? "Available" : "Paused");
-      const buttons = document.createElement("div");
-      const edit = safeElement("button", "", "Edit details");
-      edit.type = "button";
-      edit.addEventListener("click", () => {
-        document.getElementById("menuItemId").value = String(item.id);
-        document.getElementById("menuName").value = item.name;
-        document.getElementById("menuCategory").value = item.category;
-        document.getElementById("menuType").value = item.menu_type || "special";
-        document.getElementById("menuPrice").value = String(item.price);
-        document.getElementById("menuImage").value = item.image_url || "";
-        document.getElementById("menuDescription").value = item.description || "";
-        saveMenuButton.textContent = "Save menu changes ↗";
-        cancelEditButton.hidden = false;
-        setMenuFeedback("Editing " + item.name);
-        menuForm.scrollIntoView({ behavior: "auto", block: "start" });
-      });
-      const toggle = safeElement("button", "", item.is_available ? "Pause item" : "Make available");
-      toggle.type = "button";
-      toggle.addEventListener("click", async () => {
-        const previousAvailability = item.is_available;
-        const nextAvailability = !previousAvailability;
+      visibleItems.forEach((item) => {
+        const card = safeElement("article", "managed-menu-card");
+        const top = safeElement("div", "managed-menu-top");
+        const copy = document.createElement("div");
+        copy.append(
+          safeElement(
+            "span",
+            "menu-category-label",
+            (item.menu_type === "everyday" ? "Everyday menu" : "Special menu") +
+              " · " +
+              item.category,
+          ),
+        );
+        copy.append(safeElement("h3", "", item.name));
+        copy.append(
+          safeElement("p", "", item.description || "No description added."),
+        );
+        top.append(
+          copy,
+          safeElement("strong", "menu-price", money(item.price)),
+        );
+        const actions = safeElement("div", "menu-card-actions");
+        const status = safeElement(
+          "span",
+          "availability" + (item.is_available ? "" : " off"),
+          item.is_available ? "Available" : "Paused",
+        );
+        const buttons = document.createElement("div");
+        const edit = safeElement("button", "", "Edit details");
+        edit.type = "button";
+        edit.addEventListener("click", () => {
+          document.getElementById("menuItemId").value = String(item.id);
+          document.getElementById("menuName").value = item.name;
+          document.getElementById("menuCategory").value = item.category;
+          document.getElementById("menuType").value =
+            item.menu_type || "special";
+          document.getElementById("menuPrice").value = String(item.price);
+          document.getElementById("menuImage").value = item.image_url || "";
+          document.getElementById("menuDescription").value =
+            item.description || "";
+          saveMenuButton.textContent = "Save menu changes ↗";
+          cancelEditButton.hidden = false;
+          setMenuFeedback("Editing " + item.name);
+          menuForm.scrollIntoView({ behavior: "auto", block: "start" });
+        });
+        const toggle = safeElement(
+          "button",
+          "",
+          item.is_available ? "Pause item" : "Make available",
+        );
+        toggle.type = "button";
+        toggle.addEventListener("click", async () => {
+          const previousAvailability = item.is_available;
+          const nextAvailability = !previousAvailability;
 
-        // Update the card immediately so the interface feels responsive.
-        item.is_available = nextAvailability;
-        status.textContent = nextAvailability ? "Available" : "Paused";
-        status.classList.toggle("off", !nextAvailability);
-        toggle.textContent = nextAvailability ? "Pause item" : "Make available";
-        toggle.disabled = true;
-        document.getElementById("availableCount").textContent = String(menuItems.filter(menuItem => menuItem.is_available).length);
+          // Update the card immediately so the interface feels responsive.
+          item.is_available = nextAvailability;
+          status.textContent = nextAvailability ? "Available" : "Paused";
+          status.classList.toggle("off", !nextAvailability);
+          toggle.textContent = nextAvailability
+            ? "Pause item"
+            : "Make available";
+          toggle.disabled = true;
+          document.getElementById("availableCount").textContent = String(
+            menuItems.filter((menuItem) => menuItem.is_available).length,
+          );
 
-        try {
-          const { error } = await supabase.from("menu_items")
-            .update({ is_available: nextAvailability })
-            .eq("id", item.id)
-            .eq("restaurant_id", restaurant.id);
-          if (error) throw error;
-          setMenuFeedback(item.name + (nextAvailability ? " is now available." : " is now paused."));
-        } catch (error) {
-          // Revert the optimistic update if the server rejects the change.
-          item.is_available = previousAvailability;
-          status.textContent = previousAvailability ? "Available" : "Paused";
-          status.classList.toggle("off", !previousAvailability);
-          toggle.textContent = previousAvailability ? "Pause item" : "Make available";
-          document.getElementById("availableCount").textContent = String(menuItems.filter(menuItem => menuItem.is_available).length);
-          showNotice(error.message || "Could not update item availability.", true);
-        } finally {
-          toggle.disabled = false;
-        }
-      });
-      const remove = safeElement("button", "menu-delete-button", "Delete dish");
-      remove.type = "button";
-      remove.addEventListener("click", async () => {
-        if (!window.confirm("Delete “" + item.name + "” from your menu? This cannot be undone.")) return;
-        remove.disabled = true;
-        try {
-          if (item.slug && item.slug.startsWith("catalog-")) {
-            const catalogDishId = Number(item.slug.split("-")[1]);
-            if (Number.isInteger(catalogDishId) && catalogDishId > 0) {
-              const { error: availabilityError } = await supabase.from("restaurant_dish_availability")
-                .update({ is_available: false, updated_at: new Date().toISOString() })
-                .eq("restaurant_id", restaurant.id).eq("dish_id", catalogDishId);
-              if (availabilityError) throw availabilityError;
-            }
+          try {
+            const { error } = await supabase
+              .from("menu_items")
+              .update({ is_available: nextAvailability })
+              .eq("id", item.id)
+              .eq("restaurant_id", restaurant.id);
+            if (error) throw error;
+            setMenuFeedback(
+              item.name +
+                (nextAvailability ? " is now available." : " is now paused."),
+            );
+          } catch (error) {
+            // Revert the optimistic update if the server rejects the change.
+            item.is_available = previousAvailability;
+            status.textContent = previousAvailability ? "Available" : "Paused";
+            status.classList.toggle("off", !previousAvailability);
+            toggle.textContent = previousAvailability
+              ? "Pause item"
+              : "Make available";
+            document.getElementById("availableCount").textContent = String(
+              menuItems.filter((menuItem) => menuItem.is_available).length,
+            );
+            showNotice(
+              error.message || "Could not update item availability.",
+              true,
+            );
+          } finally {
+            toggle.disabled = false;
           }
-          const { error } = await supabase.from("menu_items").delete()
-            .eq("id", item.id).eq("restaurant_id", restaurant.id);
-          if (error) throw error;
-          if (document.getElementById("menuItemId").value === String(item.id)) resetMenuForm();
-          setMenuFeedback(item.name + " was removed from your available menu.");
-          await loadMenu();
-          await loadSharedCatalogue();
-        } catch (error) {
-          showNotice(error.message || "Could not delete this dish.", true);
-          remove.disabled = false;
-        }
-      });
-      buttons.append(edit, toggle, remove);
-      actions.append(status, buttons);
-      card.append(top, actions);
-      menuList.append(card);
+        });
+        const remove = safeElement(
+          "button",
+          "menu-delete-button",
+          "Delete dish",
+        );
+        remove.type = "button";
+        remove.addEventListener("click", async () => {
+          if (
+            !window.confirm(
+              "Delete “" +
+                item.name +
+                "” from your menu? This cannot be undone.",
+            )
+          )
+            return;
+          remove.disabled = true;
+          try {
+            if (item.slug && item.slug.startsWith("catalog-")) {
+              const catalogDishId = Number(item.slug.split("-")[1]);
+              if (Number.isInteger(catalogDishId) && catalogDishId > 0) {
+                const { error: availabilityError } = await supabase
+                  .from("restaurant_dish_availability")
+                  .update({
+                    is_available: false,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("restaurant_id", restaurant.id)
+                  .eq("dish_id", catalogDishId);
+                if (availabilityError) throw availabilityError;
+              }
+            }
+            const { error } = await supabase
+              .from("menu_items")
+              .delete()
+              .eq("id", item.id)
+              .eq("restaurant_id", restaurant.id);
+            if (error) throw error;
+            if (document.getElementById("menuItemId").value === String(item.id))
+              resetMenuForm();
+            setMenuFeedback(
+              item.name + " was removed from your available menu.",
+            );
+            await loadMenu();
+            await loadSharedCatalogue();
+          } catch (error) {
+            showNotice(error.message || "Could not delete this dish.", true);
+            remove.disabled = false;
+          }
+        });
+        buttons.append(edit, toggle, remove);
+        actions.append(status, buttons);
+        card.append(top, actions);
+        menuList.append(card);
       });
     }
-    addMenuSection("Everyday menu", "Your regular dishes customers can order whenever they are available.", everydayItems);
-    addMenuSection("Special menu", "Extra dishes you add for selected days or occasions.", specialItems);
+    addMenuSection(
+      "Everyday menu",
+      "Your regular dishes customers can order whenever they are available.",
+      everydayItems,
+    );
+    addMenuSection(
+      "Special menu",
+      "Extra dishes you add for selected days or occasions.",
+      specialItems,
+    );
     const menuToggle = document.getElementById("viewAllMenu");
     if (menuToggle) {
-      const hasMore = !menuTerm && (everydayItems.length > 4 || specialItems.length > 4);
+      const hasMore =
+        !menuTerm && (everydayItems.length > 4 || specialItems.length > 4);
       menuToggle.hidden = !hasMore;
-      menuToggle.textContent = menuExpanded ? "Show less" : "View all menu items";
+      menuToggle.textContent = menuExpanded
+        ? "Show less"
+        : "View all menu items";
     }
   }
 
   async function loadSharedCatalogue() {
     const [catalogueResult, availabilityResult] = await Promise.all([
-      supabase.from("dish_catalog").select("id,name,category,description,image_url,sort_order").eq("is_active", true).order("sort_order").order("name"),
-      supabase.from("restaurant_dish_availability").select("dish_id,price,is_available,menu_type").eq("restaurant_id", restaurant.id)
+      supabase
+        .from("dish_catalog")
+        .select("id,name,category,description,image_url,sort_order")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("name"),
+      supabase
+        .from("restaurant_dish_availability")
+        .select("dish_id,price,is_available,menu_type")
+        .eq("restaurant_id", restaurant.id),
     ]);
     if (catalogueResult.error) throw catalogueResult.error;
     if (availabilityResult.error) throw availabilityResult.error;
@@ -330,76 +565,159 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderSharedCatalogue() {
     const root = document.getElementById("sharedDishCatalogue");
     if (!root) return;
-    const term = (document.getElementById("catalogueSearch")?.value || "").trim().toLowerCase();
-    const category = document.getElementById("catalogueCategory")?.value || "All";
+    const term = (document.getElementById("catalogueSearch")?.value || "")
+      .trim()
+      .toLowerCase();
+    const category =
+      document.getElementById("catalogueCategory")?.value || "All";
     // Once an everyday dish is saved, move it out of the shared picker.
-    const filtered = sharedDishes.filter(dish => {
-      const saved = ownDishAvailability.find(row => Number(row.dish_id) === Number(dish.id));
+    const filtered = sharedDishes.filter((dish) => {
+      const saved = ownDishAvailability.find(
+        (row) => Number(row.dish_id) === Number(dish.id),
+      );
       const alreadySavedEveryday = saved && saved.menu_type === "everyday";
-      return !alreadySavedEveryday
-        && (category === "All" || dish.category === category)
-        && (!term || (dish.name + " " + dish.category).toLowerCase().includes(term));
+      return (
+        !alreadySavedEveryday &&
+        (category === "All" || dish.category === category) &&
+        (!term ||
+          (dish.name + " " + dish.category).toLowerCase().includes(term))
+      );
     });
     root.replaceChildren();
     const catalogueToggle = document.getElementById("viewAllCatalogue");
     if (catalogueToggle) {
       catalogueToggle.hidden = filtered.length <= 6 || Boolean(term);
-      catalogueToggle.textContent = catalogueExpanded ? "Show less" : "View all dishes";
+      catalogueToggle.textContent = catalogueExpanded
+        ? "Show less"
+        : "View all dishes";
     }
-    const visibleDishes = catalogueExpanded || term ? filtered : filtered.slice(0, 6);
+    const visibleDishes =
+      catalogueExpanded || term ? filtered : filtered.slice(0, 6);
     if (!filtered.length) {
-      root.append(safeElement("p", "empty-state", "No new dishes match that search. Your saved everyday dishes are in Daily Availability below."));
+      root.append(
+        safeElement(
+          "p",
+          "empty-state",
+          "No new dishes match that search. Your saved everyday dishes are in Daily Availability below.",
+        ),
+      );
       return;
     }
-    visibleDishes.forEach(dish => {
-      const saved = ownDishAvailability.find(row => Number(row.dish_id) === Number(dish.id));
+    visibleDishes.forEach((dish) => {
+      const saved = ownDishAvailability.find(
+        (row) => Number(row.dish_id) === Number(dish.id),
+      );
       const row = safeElement("article", "shared-dish-row");
       const info = safeElement("div", "shared-dish-info");
-      info.append(safeElement("strong", "", dish.name), safeElement("small", "", dish.category));
+      info.append(
+        safeElement("strong", "", dish.name),
+        safeElement("small", "", dish.category),
+      );
       if (dish.description) info.append(safeElement("p", "", dish.description));
       const controls = safeElement("div", "shared-dish-controls");
       const priceLabel = safeElement("label", "", "Your price (₦)");
       const price = document.createElement("input");
-      price.type = "number"; price.min = "1"; price.max = "10000000"; price.step = "1";
-      price.inputMode = "numeric"; price.value = saved?.price ? String(saved.price) : "";
-      price.placeholder = "e.g. 2500"; price.setAttribute("aria-label", "Your price for " + dish.name);
+      price.type = "number";
+      price.min = "1";
+      price.max = "10000000";
+      price.step = "1";
+      price.inputMode = "numeric";
+      price.value = saved?.price ? String(saved.price) : "";
+      price.placeholder = "e.g. 2500";
+      price.setAttribute("aria-label", "Your price for " + dish.name);
       priceLabel.append(price);
-      const availableLabel = safeElement("label", "catalogue-availability-toggle");
+      const availableLabel = safeElement(
+        "label",
+        "catalogue-availability-toggle",
+      );
       const available = document.createElement("input");
-      available.type = "checkbox"; available.checked = Boolean(saved?.is_available);
-      availableLabel.append(available, safeElement("span", "", "Available today"));
+      available.type = "checkbox";
+      available.checked = Boolean(saved?.is_available);
+      availableLabel.append(
+        available,
+        safeElement("span", "", "Available today"),
+      );
       const menuType = document.createElement("select");
       menuType.setAttribute("aria-label", "Menu type for " + dish.name);
-      [["everyday","Everyday"],["special","Special"]].forEach(([value,label]) => {
-        const option = document.createElement("option"); option.value = value; option.textContent = label; option.selected = (saved?.menu_type || "everyday") === value; menuType.append(option);
+      [
+        ["everyday", "Everyday"],
+        ["special", "Special"],
+      ].forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        option.selected = (saved?.menu_type || "everyday") === value;
+        menuType.append(option);
       });
-      const feedback = safeElement("small", "shared-dish-feedback", saved?.is_available ? "Visible to customers" : "Not listed as available");
+      const feedback = safeElement(
+        "small",
+        "shared-dish-feedback",
+        saved?.is_available
+          ? "Visible to customers"
+          : "Not listed as available",
+      );
       const save = safeElement("button", "btn", "Save dish");
       save.type = "button";
       save.addEventListener("click", async () => {
         const numericPrice = Number(price.value);
         if (!Number.isSafeInteger(numericPrice) || numericPrice < 1) {
-          price.focus(); feedback.textContent = "Enter a valid price before saving this dish."; return;
+          price.focus();
+          feedback.textContent = "Enter a valid price before saving this dish.";
+          return;
         }
-        save.disabled = true; available.disabled = true; menuType.disabled = true;
+        save.disabled = true;
+        available.disabled = true;
+        menuType.disabled = true;
         feedback.textContent = "Saving…";
         try {
-          const payload = { restaurant_id: restaurant.id, dish_id: dish.id, price: numericPrice, is_available: available.checked, menu_type: menuType.value, updated_at: new Date().toISOString() };
-          const { error } = await supabase.from("restaurant_dish_availability").upsert(payload, { onConflict: "restaurant_id,dish_id" });
+          const payload = {
+            restaurant_id: restaurant.id,
+            dish_id: dish.id,
+            price: numericPrice,
+            is_available: available.checked,
+            menu_type: menuType.value,
+            updated_at: new Date().toISOString(),
+          };
+          const { error } = await supabase
+            .from("restaurant_dish_availability")
+            .upsert(payload, { onConflict: "restaurant_id,dish_id" });
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const menuPayload = { slug, name: dish.name, category: menuCategoryForDish(dish.category), price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
-          const { error: menuError } = await supabase.from("menu_items").upsert(menuPayload, { onConflict: "slug" });
+          const menuPayload = {
+            slug,
+            name: dish.name,
+            category: menuCategoryForDish(dish.category),
+            price: numericPrice,
+            description: dish.description || "",
+            image_url: dish.image_url || "",
+            restaurant_id: restaurant.id,
+            menu_type: menuType.value,
+            tag:
+              menuType.value === "everyday"
+                ? "Everyday favourite"
+                : "Restaurant special",
+            rating: 4.7,
+            sort_order: Number(dish.sort_order || 0),
+            is_available: available.checked,
+          };
+          const { error: menuError } = await supabase
+            .from("menu_items")
+            .upsert(menuPayload, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
           await loadMenu();
-          showNotice(menuType.value === "everyday"
-            ? dish.name + " was saved to Daily Availability. Use its button there to mark it available or finished."
-            : dish.name + " was saved to your special menu.");
+          showNotice(
+            menuType.value === "everyday"
+              ? dish.name +
+                  " was saved to Daily Availability. Use its button there to mark it available or finished."
+              : dish.name + " was saved to your special menu.",
+          );
         } catch (error) {
           feedback.textContent = error.message || "Could not save this dish.";
         } finally {
-          save.disabled = false; available.disabled = false; menuType.disabled = false;
+          save.disabled = false;
+          available.disabled = false;
+          menuType.disabled = false;
         }
       });
       available.addEventListener("change", () => save.click());
@@ -412,11 +730,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderDailyAvailability() {
     const root = document.getElementById("dailyAvailabilityList");
     if (!root) return;
-    const dailyTerm = (document.getElementById("dailyAvailabilitySearch")?.value || "").trim().toLowerCase();
+    const dailyTerm = (
+      document.getElementById("dailyAvailabilitySearch")?.value || ""
+    )
+      .trim()
+      .toLowerCase();
     const dailyDishes = ownDishAvailability
-      .filter(row => row.menu_type === "everyday")
-      .map(row => ({ availability: row, dish: sharedDishes.find(item => Number(item.id) === Number(row.dish_id)) }))
-      .filter(item => item.dish && (!dailyTerm || (item.dish.name + " " + item.dish.category).toLowerCase().includes(dailyTerm)))
+      .filter((row) => row.menu_type === "everyday")
+      .map((row) => ({
+        availability: row,
+        dish: sharedDishes.find(
+          (item) => Number(item.id) === Number(row.dish_id),
+        ),
+      }))
+      .filter(
+        (item) =>
+          item.dish &&
+          (!dailyTerm ||
+            (item.dish.name + " " + item.dish.category)
+              .toLowerCase()
+              .includes(dailyTerm)),
+      )
       .sort((a, b) => a.dish.name.localeCompare(b.dish.name));
     root.replaceChildren();
     const dailyToggle = document.getElementById("viewAllDaily");
@@ -424,56 +758,97 @@ document.addEventListener("DOMContentLoaded", async () => {
       dailyToggle.hidden = dailyDishes.length <= 6 || Boolean(dailyTerm);
       dailyToggle.textContent = dailyExpanded ? "Show less" : "View all dishes";
     }
-    const visibleDailyDishes = dailyExpanded || dailyTerm ? dailyDishes : dailyDishes.slice(0, 6);
+    const visibleDailyDishes =
+      dailyExpanded || dailyTerm ? dailyDishes : dailyDishes.slice(0, 6);
     if (!dailyDishes.length) {
-      root.append(safeElement("p", "empty-state", "You haven't saved any everyday dishes yet. Choose a dish above and set its menu type to Everyday."));
+      root.append(
+        safeElement(
+          "p",
+          "empty-state",
+          "You haven't saved any everyday dishes yet. Choose a dish above and set its menu type to Everyday.",
+        ),
+      );
       return;
     }
     visibleDailyDishes.forEach(({ availability, dish }) => {
-      const card = safeElement("article", "daily-availability-card" + (availability.is_available ? " is-available" : " is-finished"));
+      const card = safeElement(
+        "article",
+        "daily-availability-card" +
+          (availability.is_available ? " is-available" : " is-finished"),
+      );
       const details = safeElement("div", "daily-availability-details");
       details.append(
         safeElement("strong", "", dish.name),
-        safeElement("small", "", dish.category + " · " + money(availability.price)),
-        safeElement("span", "daily-status", availability.is_available ? "Available today" : "Finished for today")
+        safeElement(
+          "small",
+          "",
+          dish.category + " · " + money(availability.price),
+        ),
+        safeElement(
+          "span",
+          "daily-status",
+          availability.is_available ? "Available today" : "Finished for today",
+        ),
       );
-      const toggle = safeElement("button", "btn " + (availability.is_available ? "btn-muted" : ""), availability.is_available ? "Mark finished" : "Mark available");
+      const toggle = safeElement(
+        "button",
+        "btn " + (availability.is_available ? "btn-muted" : ""),
+        availability.is_available ? "Mark finished" : "Mark available",
+      );
       toggle.type = "button";
       toggle.addEventListener("click", async () => {
         const nextAvailable = !availability.is_available;
         toggle.disabled = true;
         toggle.textContent = "Saving…";
         try {
-          const { error } = await supabase.from("restaurant_dish_availability")
-            .update({ is_available: nextAvailable, updated_at: new Date().toISOString() })
-            .eq("restaurant_id", restaurant.id).eq("dish_id", dish.id);
+          const { error } = await supabase
+            .from("restaurant_dish_availability")
+            .update({
+              is_available: nextAvailable,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("restaurant_id", restaurant.id)
+            .eq("dish_id", dish.id);
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
           // A dish can have availability saved without a menu_items row (for
           // example, if an earlier save only completed its first database write).
           // Upsert here repairs that gap as well as toggling existing menu items.
-          const { error: menuError } = await supabase.from("menu_items").upsert({
-            slug,
-            name: dish.name,
-            category: menuCategoryForDish(dish.category),
-            price: Number(availability.price),
-            description: dish.description || "",
-            image_url: dish.image_url || "",
-            restaurant_id: restaurant.id,
-            menu_type: "everyday",
-            tag: "Everyday favourite",
-            rating: 4.7,
-            sort_order: Number(dish.sort_order || 0),
-            is_available: nextAvailable
-          }, { onConflict: "slug" });
+          const { error: menuError } = await supabase.from("menu_items").upsert(
+            {
+              slug,
+              name: dish.name,
+              category: menuCategoryForDish(dish.category),
+              price: Number(availability.price),
+              description: dish.description || "",
+              image_url: dish.image_url || "",
+              restaurant_id: restaurant.id,
+              menu_type: "everyday",
+              tag: "Everyday favourite",
+              rating: 4.7,
+              sort_order: Number(dish.sort_order || 0),
+              is_available: nextAvailable,
+            },
+            { onConflict: "slug" },
+          );
           if (menuError) throw menuError;
           await loadSharedCatalogue();
           await loadMenu();
-          showNotice(dish.name + (nextAvailable ? " is now available to customers." : " is marked finished for today."));
+          showNotice(
+            dish.name +
+              (nextAvailable
+                ? " is now available to customers."
+                : " is marked finished for today."),
+          );
         } catch (error) {
-          showNotice(error.message || "Could not update today's availability.", true);
+          showNotice(
+            error.message || "Could not update today's availability.",
+            true,
+          );
           toggle.disabled = false;
-          toggle.textContent = availability.is_available ? "Mark finished" : "Mark available";
+          toggle.textContent = availability.is_available
+            ? "Mark finished"
+            : "Mark available";
         }
       });
       card.append(details, toggle);
@@ -491,24 +866,73 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (error) throw error;
       notificationPreorders = data || [];
       renderRestaurantNotifications();
-      const currentIds = new Set((data || []).map(request => request.id));
+      const currentIds = new Set((data || []).map((request) => request.id));
       if (knownPreorderIds) {
-        const incoming = (data || []).filter(request => !knownPreorderIds.has(request.id));
-        if (incoming.length) showNotice("New pre-order request" + (incoming.length > 1 ? "s" : "") + " received: " + incoming.map(request => request.dish_name).join(", ") + ". Review the pre-order inbox.");
+        const incoming = (data || []).filter(
+          (request) => !knownPreorderIds.has(request.id),
+        );
+        if (incoming.length)
+          showNotice(
+            "New pre-order request" +
+              (incoming.length > 1 ? "s" : "") +
+              " received: " +
+              incoming.map((request) => request.dish_name).join(", ") +
+              ". Review the pre-order inbox.",
+          );
       }
       knownPreorderIds = currentIds;
       root.replaceChildren();
       if (!data?.length) {
-        root.append(safeElement("p", "empty-state", "No pending pre-order requests right now. New requests refresh automatically."));
+        root.append(
+          safeElement(
+            "p",
+            "empty-state",
+            "No pending pre-order requests right now. New requests refresh automatically.",
+          ),
+        );
         return;
       }
-      data.forEach(request => {
-        const card = safeElement("article", "restaurant-order-card preorder-request-card");
+      data.forEach((request) => {
+        const card = safeElement(
+          "article",
+          "restaurant-order-card preorder-request-card",
+        );
         const head = safeElement("div", "restaurant-order-head");
-        head.append(safeElement("h3", "", request.dish_name), safeElement("span", "order-status-pill", "Open request"));
-        card.append(head, safeElement("p", "order-meta", "Quantity: " + request.quantity + " · Requested " + new Date(request.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
-        if (request.requested_for) card.append(safeElement("p", "order-meta", "Needed by: " + new Date(request.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
-        const priceLabel = safeElement("label", "preorder-accept-price", "Your price per item (₦)");
+        head.append(
+          safeElement("h3", "", request.dish_name),
+          safeElement("span", "order-status-pill", "Open request"),
+        );
+        card.append(
+          head,
+          safeElement(
+            "p",
+            "order-meta",
+            "Quantity: " +
+              request.quantity +
+              " · Requested " +
+              new Date(request.created_at).toLocaleString("en-NG", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }),
+          ),
+        );
+        if (request.requested_for)
+          card.append(
+            safeElement(
+              "p",
+              "order-meta",
+              "Needed by: " +
+                new Date(request.requested_for).toLocaleString("en-NG", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
+            ),
+          );
+        const priceLabel = safeElement(
+          "label",
+          "preorder-accept-price",
+          "Your price per item (₦)",
+        );
         const priceInput = document.createElement("input");
         priceInput.type = "number";
         priceInput.min = "1";
@@ -517,7 +941,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         priceInput.inputMode = "numeric";
         priceInput.required = true;
         priceInput.placeholder = "Enter your price";
-        priceInput.setAttribute("aria-label", "Your price per item for " + request.dish_name);
+        priceInput.setAttribute(
+          "aria-label",
+          "Your price per item for " + request.dish_name,
+        );
         priceLabel.append(priceInput);
         const accept = safeElement("button", "btn", "Accept and set price");
         accept.type = "button";
@@ -525,22 +952,37 @@ document.addEventListener("DOMContentLoaded", async () => {
           const price = Number(priceInput.value);
           if (!Number.isSafeInteger(price) || price < 1 || price > 10000000) {
             priceInput.focus();
-            showNotice("Enter a valid price before accepting this pre-order.", true);
+            showNotice(
+              "Enter a valid price before accepting this pre-order.",
+              true,
+            );
             return;
           }
           accept.disabled = true;
           priceInput.disabled = true;
           try {
-            const { data: result, error: acceptError } = await supabase.rpc("accept_dish_preorder_request", {
-              p_request_id: request.id,
-              p_price: price
-            });
+            const { data: result, error: acceptError } = await supabase.rpc(
+              "accept_dish_preorder_request",
+              {
+                p_request_id: request.id,
+                p_price: price,
+              },
+            );
             if (acceptError) throw acceptError;
             const outcome = Array.isArray(result) ? result[0] : result;
             if (!outcome?.accepted) {
-              showNotice("Another restaurant has already accepted this request. It has been removed from the open list.", true);
+              showNotice(
+                "Another restaurant has already accepted this request. It has been removed from the open list.",
+                true,
+              );
             } else {
-              showNotice("You accepted " + request.dish_name + " at " + money(price) + ". The customer can now add it to their bag and check out.");
+              showNotice(
+                "You accepted " +
+                  request.dish_name +
+                  " at " +
+                  money(price) +
+                  ". The customer can now add it to their bag and check out.",
+              );
             }
             await loadPreorderRequests();
           } catch (error) {
@@ -550,97 +992,246 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         });
         card.append(priceLabel);
-        card.append(accept); root.append(card);
+        card.append(accept);
+        root.append(card);
       });
     } catch (error) {
-      root.replaceChildren(safeElement("p", "empty-state", error.message || "Could not load pre-order requests."));
+      root.replaceChildren(
+        safeElement(
+          "p",
+          "empty-state",
+          error.message || "Could not load pre-order requests.",
+        ),
+      );
     } finally {
       if (refresh) refresh.disabled = false;
     }
   }
 
   async function loadOrders() {
-    ordersList.replaceChildren(safeElement("p", "loading-copy", "Loading incoming orders…"));
-    const { data: orders, error } = await supabase.from("orders")
-      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,subtotal,delivery_fee,total,status,created_at,requested_for")
-      .order("created_at", { ascending: false }).limit(100);
+    ordersList.replaceChildren(
+      safeElement("p", "loading-copy", "Loading incoming orders…"),
+    );
+    const { data: orders, error } = await supabase
+      .from("orders")
+      .select(
+        "id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,subtotal,delivery_fee,total,status,created_at,requested_for",
+      )
+      .order("created_at", { ascending: false })
+      .limit(100);
     if (error) throw error;
-    const orderIds = (orders || []).map(order => order.id);
+    const orderIds = (orders || []).map((order) => order.id);
     let lines = [];
     let reports = [];
     if (orderIds.length) {
-      const { data, error: linesError } = await supabase.from("order_items")
-        .select("order_id,item_name,quantity,unit_price,line_total,menu_item_id,restaurant_id,preorder_request_id").in("order_id", orderIds);
+      const { data, error: linesError } = await supabase
+        .from("order_items")
+        .select(
+          "order_id,item_name,quantity,unit_price,line_total,menu_item_id,restaurant_id,preorder_request_id",
+        )
+        .in("order_id", orderIds);
       if (linesError) throw linesError;
       lines = data || [];
-      const { data: reportData, error: reportError } = await supabase.from("order_issue_reports")
-        .select("id,order_id,reason,details,status,created_at").in("order_id", orderIds);
+      const { data: reportData, error: reportError } = await supabase
+        .from("order_issue_reports")
+        .select("id,order_id,reason,details,status,created_at")
+        .in("order_id", orderIds);
       if (reportError) throw reportError;
       reports = reportData || [];
     }
     ordersList.replaceChildren();
-    document.getElementById("ordersCount").textContent = String((orders || []).length);
+    document.getElementById("ordersCount").textContent = String(
+      (orders || []).length,
+    );
     if (!orders?.length) {
       notificationOrders = [];
       renderRestaurantNotifications();
-      ordersList.append(safeElement("p", "empty-state", "No incoming orders yet. Orders for your restaurant will appear here."));
+      ordersList.append(
+        safeElement(
+          "p",
+          "empty-state",
+          "No incoming orders yet. Orders for your restaurant will appear here.",
+        ),
+      );
       return;
     }
-    const availableOrders = orders.filter(order => { const orderLines = lines.filter(line => line.order_id === order.id); return orderLines.length > 0 && orderLines.every(line => String(line.restaurant_id || "") === String(restaurant.id)); });
+    const availableOrders = orders.filter((order) => {
+      const orderLines = lines.filter((line) => line.order_id === order.id);
+      return (
+        orderLines.length > 0 &&
+        orderLines.every(
+          (line) => String(line.restaurant_id || "") === String(restaurant.id),
+        )
+      );
+    });
     notificationOrders = availableOrders;
     renderRestaurantNotifications();
-    const currentOrderIds = new Set(availableOrders.map(order => String(order.id)));
+    const currentOrderIds = new Set(
+      availableOrders.map((order) => String(order.id)),
+    );
     if (knownOrderIds) {
-      const incoming = availableOrders.filter(order => !knownOrderIds.has(String(order.id)));
+      const incoming = availableOrders.filter(
+        (order) => !knownOrderIds.has(String(order.id)),
+      );
       if (incoming.length) {
-        showNotice("New order" + (incoming.length > 1 ? "s" : "") + " received: " + incoming.map(order => order.order_number).join(", ") + ". Review your incoming orders.");
+        showNotice(
+          "New order" +
+            (incoming.length > 1 ? "s" : "") +
+            " received: " +
+            incoming.map((order) => order.order_number).join(", ") +
+            ". Review your incoming orders.",
+        );
       }
     }
     knownOrderIds = currentOrderIds;
-    document.getElementById("ordersCount").textContent = String(availableOrders.length);
+    document.getElementById("ordersCount").textContent = String(
+      availableOrders.length,
+    );
     if (!availableOrders.length) {
-      ordersList.append(safeElement("p", "empty-state", "No incoming orders for your menu yet."));
+      ordersList.append(
+        safeElement(
+          "p",
+          "empty-state",
+          "No incoming orders for your menu yet.",
+        ),
+      );
       return;
     }
-    availableOrders.forEach(order => {
+    availableOrders.forEach((order) => {
       const card = safeElement("article", "restaurant-order-card");
       const head = safeElement("div", "restaurant-order-head");
       const copy = document.createElement("div");
       copy.append(safeElement("h3", "", order.order_number));
-      copy.append(safeElement("p", "", new Date(order.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
-      head.append(copy, safeElement("span", "order-status-pill", statusLabels[order.status] || order.status));
+      copy.append(
+        safeElement(
+          "p",
+          "",
+          new Date(order.created_at).toLocaleString("en-NG", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+        ),
+      );
+      head.append(
+        copy,
+        safeElement(
+          "span",
+          "order-status-pill",
+          statusLabels[order.status] || order.status,
+        ),
+      );
       card.append(head);
-      card.append(safeElement("p", "order-meta", "Customer: " + order.customer_name + " · " + order.customer_phone));
-      card.append(safeElement("p", "order-meta", "Delivery: " + order.delivery_address + ", " + order.delivery_area));
-      if (order.requested_for) card.append(safeElement("p", "order-meta", "Requested preparation / delivery time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })));
-      else card.append(safeElement("p", "order-meta", "Requested time: As soon as the business can prepare it"));
-      if (order.delivery_notes) card.append(safeElement("p", "order-meta", "Note: " + order.delivery_notes));
+      card.append(
+        safeElement(
+          "p",
+          "order-meta",
+          "Customer: " + order.customer_name + " · " + order.customer_phone,
+        ),
+      );
+      card.append(
+        safeElement(
+          "p",
+          "order-meta",
+          "Delivery: " + order.delivery_address + ", " + order.delivery_area,
+        ),
+      );
+      if (order.requested_for)
+        card.append(
+          safeElement(
+            "p",
+            "order-meta",
+            "Requested preparation / delivery time: " +
+              new Date(order.requested_for).toLocaleString("en-NG", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }),
+          ),
+        );
+      else
+        card.append(
+          safeElement(
+            "p",
+            "order-meta",
+            "Requested time: As soon as the business can prepare it",
+          ),
+        );
+      if (order.delivery_notes)
+        card.append(
+          safeElement("p", "order-meta", "Note: " + order.delivery_notes),
+        );
       const list = safeElement("ul", "restaurant-order-lines");
-      lines.filter(line => line.order_id === order.id).forEach(line => {
-        const li = document.createElement("li");
-        li.append(safeElement("span", "", line.item_name + " × " + line.quantity));
-        li.append(safeElement("strong", "", money(line.line_total)));
-        list.append(li);
-      });
+      lines
+        .filter((line) => line.order_id === order.id)
+        .forEach((line) => {
+          const li = document.createElement("li");
+          li.append(
+            safeElement("span", "", line.item_name + " × " + line.quantity),
+          );
+          li.append(safeElement("strong", "", money(line.line_total)));
+          list.append(li);
+        });
       card.append(list);
-      const orderReports = reports.filter(report => Number(report.order_id) === Number(order.id));
-      orderReports.forEach(report => {
-        const reasonLabels = { delivery_delayed: "Delivery delayed", marked_delivered_not_received: "Marked delivered, but customer has not received it", missing_items: "Missing items", wrong_order: "Wrong order", food_quality: "Food quality problem", other: "Other issue" };
-        card.append(safeElement("strong", "order-report-alert", "Customer report · " + (reasonLabels[report.reason] || report.reason)));
-        if (report.details) card.append(safeElement("p", "order-report-details", report.details));
+      const orderReports = reports.filter(
+        (report) => Number(report.order_id) === Number(order.id),
+      );
+      orderReports.forEach((report) => {
+        const reasonLabels = {
+          delivery_delayed: "Delivery delayed",
+          marked_delivered_not_received:
+            "Marked delivered, but customer has not received it",
+          missing_items: "Missing items",
+          wrong_order: "Wrong order",
+          food_quality: "Food quality problem",
+          other: "Other issue",
+        };
+        card.append(
+          safeElement(
+            "strong",
+            "order-report-alert",
+            "Customer report · " +
+              (reasonLabels[report.reason] || report.reason),
+          ),
+        );
+        if (report.details)
+          card.append(safeElement("p", "order-report-details", report.details));
       });
       const footer = safeElement("div", "restaurant-order-footer");
-      const payment = safeElement("span", "order-meta", "Payment preference: " + order.payment_method);
-      footer.append(payment, safeElement("strong", "", "Total " + money(order.total)));
+      const payment = safeElement(
+        "span",
+        "order-meta",
+        "Payment preference: " + order.payment_method,
+      );
+      footer.append(
+        payment,
+        safeElement("strong", "", "Total " + money(order.total)),
+      );
       const statusSelect = document.createElement("select");
-      statusSelect.setAttribute("aria-label", "Update status for " + order.order_number);
-      [["received","Awaiting confirmation"],["confirmed","Confirmed"],["preparing","Preparing"],["out_for_delivery","Out for delivery"],["delivered","Delivered"],["cancelled","Cancelled"]].forEach(([value,label]) => {
-        const option = document.createElement("option"); option.value = value; option.textContent = label; option.selected = value === order.status; option.disabled = value === "received"; statusSelect.append(option);
+      statusSelect.setAttribute(
+        "aria-label",
+        "Update status for " + order.order_number,
+      );
+      [
+        ["received", "Awaiting confirmation"],
+        ["confirmed", "Confirmed"],
+        ["preparing", "Preparing"],
+        ["out_for_delivery", "Out for delivery"],
+        ["delivered", "Delivered"],
+        ["cancelled", "Cancelled"],
+      ].forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        option.selected = value === order.status;
+        option.disabled = value === "received";
+        statusSelect.append(option);
       });
       statusSelect.addEventListener("change", async () => {
         statusSelect.disabled = true;
         try {
-          const { error } = await supabase.rpc("restaurant_update_order_status", { p_order_id: order.id, p_status: statusSelect.value });
+          const { error } = await supabase.rpc(
+            "restaurant_update_order_status",
+            { p_order_id: order.id, p_status: statusSelect.value },
+          );
           if (error) throw error;
           await loadOrders();
         } catch (error) {
@@ -655,7 +1246,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  menuForm.addEventListener("submit", async event => {
+  menuForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!restaurant || restaurant.status !== "approved") return;
     const name = document.getElementById("menuName").value.trim();
@@ -666,18 +1257,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     const image_url = document.getElementById("menuImage").value.trim();
     const editingId = document.getElementById("menuItemId").value;
     if (!name || !Number.isSafeInteger(price) || price <= 0) {
-      setMenuFeedback("Enter a dish name and a valid whole-number price.", true);
+      setMenuFeedback(
+        "Enter a dish name and a valid whole-number price.",
+        true,
+      );
       return;
     }
     saveMenuButton.disabled = true;
     setMenuFeedback(editingId ? "Saving menu changes…" : "Adding menu item…");
     try {
-      const payload = { name, category, menu_type, price, description, image_url, restaurant_id: restaurant.id };
+      const payload = {
+        name,
+        category,
+        menu_type,
+        price,
+        description,
+        image_url,
+        restaurant_id: restaurant.id,
+      };
       if (editingId) {
-        const { error } = await supabase.from("menu_items").update(payload).eq("id", Number(editingId)).eq("restaurant_id", restaurant.id);
+        const { error } = await supabase
+          .from("menu_items")
+          .update(payload)
+          .eq("id", Number(editingId))
+          .eq("restaurant_id", restaurant.id);
         if (error) throw error;
       } else {
-        const slugBase = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70) || "menu-item";
+        const slugBase =
+          name
+            .toLowerCase()
+            .normalize("NFKD")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "")
+            .slice(0, 70) || "menu-item";
         payload.slug = slugBase + "-" + Math.random().toString(36).slice(2, 8);
         payload.tag = "Restaurant special";
         payload.rating = 4.7;

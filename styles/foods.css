@@ -1281,7 +1281,6 @@ p {
   }
 }
 
-
 .preorder-catalogue-panel {
   margin-top: 42px;
   padding: clamp(18px, 3vw, 30px);
@@ -1295,33 +1294,116 @@ p {
   gap: 12px;
   margin: 20px 0;
 }
-.preorder-catalogue-tools input, .preorder-catalogue-tools select {
-  min-width: 0; width: 100%; border: 1px solid var(--line); border-radius: 10px;
-  padding: 12px; font: inherit; background: #fff; color: var(--ink);
+.preorder-catalogue-tools input,
+.preorder-catalogue-tools select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
 }
-.preorder-dish-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.preorder-dish-card { min-width: 0; border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: #fff; }
-.preorder-dish-card h3 { margin: 8px 0; font-size: 17px; }
-.preorder-dish-category { color: var(--green); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.preorder-dish-description { color: var(--muted); font-size: 14px; line-height: 1.5; }
-.catalogue-live-status, .catalogue-unavailable-status { display: inline-block; border-radius: 99px; padding: 6px 9px; font-size: 12px; font-weight: 800; margin: 6px 0; }
-.catalogue-live-status { color: #236b45; background: #eaf6ed; }
-.catalogue-unavailable-status { color: #8b4a12; background: #fff2df; }
-.preorder-price-range { font-weight: 700; margin: 4px 0 12px; }
-.preorder-dish-card .btn { width: 100%; margin-top: 8px; cursor: pointer; border: 0; font: inherit; font-weight: 700; }
-.preorder-request-form { display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
-.preorder-request-form label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; }
-.preorder-request-form input, .preorder-request-form textarea { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 9px; font: inherit; }
-.preorder-request-form button { cursor: pointer; }
-.preorder-request-form .btn-muted { background: #f1f3f1; color: var(--ink); }
+.preorder-dish-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.preorder-dish-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  background: #fff;
+}
+.preorder-dish-card h3 {
+  margin: 8px 0;
+  font-size: 17px;
+}
+.preorder-dish-category {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.preorder-dish-description {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.catalogue-live-status,
+.catalogue-unavailable-status {
+  display: inline-block;
+  border-radius: 99px;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 800;
+  margin: 6px 0;
+}
+.catalogue-live-status {
+  color: #236b45;
+  background: #eaf6ed;
+}
+.catalogue-unavailable-status {
+  color: #8b4a12;
+  background: #fff2df;
+}
+.preorder-price-range {
+  font-weight: 700;
+  margin: 4px 0 12px;
+}
+.preorder-dish-card .btn {
+  width: 100%;
+  margin-top: 8px;
+  cursor: pointer;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+}
+.preorder-request-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.preorder-request-form label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.preorder-request-form input,
+.preorder-request-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font: inherit;
+}
+.preorder-request-form button {
+  cursor: pointer;
+}
+.preorder-request-form .btn-muted {
+  background: #f1f3f1;
+  color: var(--ink);
+}
 @media (max-width: 760px) {
-  .preorder-catalogue-tools { grid-template-columns: 1fr; }
-  .preorder-dish-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .preorder-catalogue-tools {
+    grid-template-columns: 1fr;
+  }
+  .preorder-dish-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 480px) {
-  .preorder-dish-grid { grid-template-columns: 1fr; }
+  .preorder-dish-grid {
+    grid-template-columns: 1fr;
+  }
 }
-
 
 /* Compact customer catalogue: show a manageable selection before expanding. */
 .preorder-catalogue-listbar {
