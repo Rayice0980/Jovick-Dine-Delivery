@@ -136,6 +136,15 @@ using (customer_id = (select auth.uid()));
 drop trigger if exists sync_menu_item_restaurant_rating on public.menu_items;
 drop function if exists public.sync_menu_item_restaurant_rating();
 
+alter table public.menu_items alter column rating set default 0;
+update public.menu_items m
+set rating = coalesce((
+  select round(avg(r.rating)::numeric, 1)
+  from public.menu_item_reviews r
+  where r.menu_item_id = m.id and r.is_public
+), 0)
+where m.restaurant_id is not null;
+
 create or replace function public.submit_menu_item_review(
   p_order_item_id bigint,
   p_rating integer,
