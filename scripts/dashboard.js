@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (savedReview) {
               const rated = document.createElement("p");
               rated.className = "order-rating-saved";
-              rated.textContent = "Your rating: " + "★".repeat(Number(savedReview.rating)) + "☆".repeat(5 - Number(savedReview.rating)) + " (" + savedReview.rating + "/5)";
+              rated.textContent = "Your rating: " + "★".repeat(Number(savedReview.rating)) + "☆".repeat(5 - Number(savedReview.rating)) + " (" + savedReview.rating + "/5)" + (savedReview.review_text ? " · " + savedReview.review_text : "");
               reviewBlock.append(rated);
             } else {
               const ratingForm = document.createElement("form");
