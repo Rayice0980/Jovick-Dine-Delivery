@@ -156,6 +156,18 @@ async function finalize(sessionId: string) {
   return data || [];
 }
 
+
+async function recordGatewayFee(checkoutId: string, feeKobo: number) {
+  if (!Number.isFinite(feeKobo) || feeKobo <= 0) return;
+  const { error } = await admin.from("payment_allocations").insert({
+    checkout_session_id: checkoutId,
+    allocation_type: "gateway_fee",
+    amount_kobo: Math.round(feeKobo),
+    settlement_status: "not_applicable",
+  });
+  if (error && error.code !== "23505") throw error;
+}
+
 async function handleWebhook(request: Request) {
   const rawBody = await request.text();
   if (!(await validPaystackSignature(rawBody, request.headers.get("x-paystack-signature")))) {
@@ -206,6 +218,7 @@ async function handleWebhook(request: Request) {
     }).eq("id", checkout.id).neq("status", "paid");
     if (updateError) throw updateError;
 
+    await recordGatewayFee(checkout.id, Number(verified.fees || 0));
     await finalize(checkout.id);
 
     const { error: processedError } = await admin.from("payment_events").update({
@@ -410,6 +423,7 @@ async function handleVerify(userId: string, body: Record<string, unknown>) {
     updated_at: new Date().toISOString(),
   }).eq("id", checkout.id).neq("status", "paid");
   if (updateError) throw updateError;
+  await recordGatewayFee(checkout.id, Number(verified.fees || 0));
   const orders = await finalize(checkout.id);
   return json({ success: true, checkout_id: checkout.id, orders });
 }
