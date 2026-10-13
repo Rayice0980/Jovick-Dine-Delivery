@@ -388,7 +388,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const { error } = await supabase.from("restaurant_dish_availability").upsert(payload, { onConflict: "restaurant_id,dish_id" });
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const menuPayload = { slug, name: dish.name, category: menuCategoryForDish(dish.category), price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 0, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
+          const menuPayload = { slug, name: dish.name, category: menuCategoryForDish(dish.category), price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", sort_order: Number(dish.sort_order || 0), is_available: available.checked };
           const { error: menuError } = await supabase.from("menu_items").upsert(menuPayload, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
@@ -462,7 +462,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             restaurant_id: restaurant.id,
             menu_type: "everyday",
             tag: "Everyday favourite",
-            rating: 0,
             sort_order: Number(dish.sort_order || 0),
             is_available: nextAvailable
           }, { onConflict: "slug" });
