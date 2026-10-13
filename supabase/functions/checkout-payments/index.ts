@@ -239,6 +239,14 @@ async function handleWebhook(request: Request) {
 }
 
 async function handleCreate(userId: string, body: Record<string, unknown>) {
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("account_type")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError || profile?.account_type !== "customer") {
+    return json({ error: "Only customer accounts can place food orders." }, 403);
+  }
   const paymentMethod = String(body.payment_method || "");
   if (!["paystack", "cash_on_delivery"].includes(paymentMethod)) {
     return json({ error: "Choose Paystack online payment or cash on delivery." }, 400);
@@ -248,6 +256,14 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
     if (typeof body[field] !== "string" || !(body[field] as string).trim()) {
       return json({ error: "Please complete your delivery details." }, 400);
     }
+  }
+  if (String(body.customer_name).trim().length < 2 ||
+    String(body.customer_phone).trim().length < 7 ||
+    String(body.customer_email).trim().length < 5 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.customer_email).trim()) ||
+    String(body.delivery_address).trim().length < 5 ||
+    String(body.delivery_area).trim().length < 2) {
+    return json({ error: "Please enter a valid name, phone, email, delivery address, and area." }, 400);
   }
   const idempotencyKey = String(body.idempotency_key || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
