@@ -18,7 +18,16 @@ create table if not exists public.checkout_sessions (
   total integer not null check (total = food_subtotal + delivery_fee),
   commission_rate numeric(5,4) not null default 0.1000 check (commission_rate = 0.1000),
   delivery_area text not null,
-  delivery_plan text not null,
+  delivery_plan text not null check (delivery_plan in ('shared_courier', 'separate_couriers')),
+  restaurant_stop_count integer not null check (restaurant_stop_count between 1 and 20),
+  customer_name text not null,
+  customer_phone text not null,
+  customer_email text not null,
+  delivery_address text not null,
+  delivery_notes text not null default '',
+  requested_for timestamptz,
+  cart_items jsonb not null check (jsonb_typeof(cart_items) = 'array'),
+  finalized_at timestamptz,
   payment_reference text unique,
   provider_transaction_id text unique,
   idempotency_key uuid not null,
@@ -48,6 +57,10 @@ create table if not exists public.delivery_fee_quotes (
   updated_at timestamptz not null default now(),
   unique (delivery_area, restaurant_stop_count, delivery_plan)
 );
+
+create unique index if not exists delivery_fee_quotes_one_active_per_route
+  on public.delivery_fee_quotes(delivery_area, restaurant_stop_count)
+  where active;
 
 create table if not exists public.restaurant_payment_accounts (
   restaurant_id uuid primary key references public.restaurants(id) on delete cascade,
