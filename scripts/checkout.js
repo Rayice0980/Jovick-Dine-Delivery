@@ -192,7 +192,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         ? "Your checkout succeeded. Separate orders were sent to " + orders.length + " businesses."
         : "Order saved successfully. You can view it from your customer dashboard.");
     } catch (error) {
-      showNote(error.message || "We couldn't place your order. Your cart is still saved; please try again.", true);
+      let message = error.message || "We couldn't place your order. Your cart is still saved; please try again.";
+      if (error.context && typeof error.context.json === "function") {
+        try {
+          const details = await error.context.json();
+          if (details?.error) message = details.error;
+        } catch {}
+      }
+      showNote(message, true);
     } finally { submitButton.disabled = false; submitButton.removeAttribute("aria-busy"); }
   });
 });
