@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     container.append(loading);
     try {
       const { data: orders, error } = await supabase.from("orders")
-        .select("id, order_number, status, total, delivery_area, created_at, requested_for")
+        .select("id, order_number, status, total, delivery_area, payment_method, payment_status, created_at, requested_for")
         .eq("customer_id", customerId).order("created_at", { ascending: false });
       if (error) throw error;
       container.replaceChildren();
@@ -37,12 +37,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         empty.append(icon, title, copy, link); container.append(empty); return;
       }
       const { data: lines, error: linesError } = await supabase.from("order_items")
-        .select("order_id, item_name, quantity, line_total").in("order_id", orders.map((o) => o.id));
+        .select("id, order_id, item_name, quantity, line_total, menu_item_id, preorder_request_id, restaurant_id").in("order_id", orders.map((o) => o.id));
       if (linesError) throw linesError;
-      const { data: ratings, error: ratingsError } = await supabase.from("restaurant_ratings")
-        .select("order_id,rating").eq("customer_id", customerId).in("order_id", orders.map((o) => o.id));
+      const { data: ratings, error: ratingsError } = await supabase.from("menu_item_reviews")
+        .select("order_item_id,rating,review_text,is_public").eq("customer_id", customerId).in("order_id", orders.map((o) => o.id));
       if (ratingsError) throw ratingsError;
-      const ratingByOrder = new Map((ratings || []).map(item => [String(item.order_id), Number(item.rating)]));
+      const ratingByLine = new Map((ratings || []).map(item => [String(item.order_item_id), item]));
       const { data: reports, error: reportsError } = await supabase.from("order_issue_reports")
         .select("id,order_id,reason,details,status,created_at")
         .eq("customer_id", customerId).in("order_id", orders.map((o) => o.id));
@@ -67,8 +67,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (order.requested_for) { const schedule = document.createElement("p"); schedule.className = "order-meta"; schedule.textContent = "Requested time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); card.append(schedule); }
         const footer = document.createElement("div"); footer.className = "order-history-footer";
         const area = document.createElement("span"); area.textContent = "Delivery: " + order.delivery_area;
+        const payment = document.createElement("span");
+        const paymentLabels = { paid: "Paid online", cash_due: "Cash due on delivery", cash_collected: "Cash collected", unpaid: "Payment pending", pending: "Payment pending", failed: "Payment failed", refunded: "Refunded" };
+        payment.textContent = "Payment: " + (paymentLabels[order.payment_status] || order.payment_method || "Pending");
         const total = document.createElement("strong"); total.textContent = "Total " + money(order.total);
-        footer.append(area, total); card.append(footer);
+        footer.append(area, payment, total); card.append(footer);
         const orderReports = (reports || []).filter((report) => Number(report.order_id) === Number(order.id));
         const reportArea = document.createElement("div"); reportArea.className = "order-report-area";
         if (orderReports.length) {
@@ -115,26 +118,30 @@ document.addEventListener("DOMContentLoaded", async () => {
           reportArea.append(reportButton);
         }
         if (order.status === "delivered") {
-          const savedRating = ratingByOrder.get(String(order.id));
-          if (savedRating) {
-            const rated = document.createElement("p");
-            rated.className = "order-rating-saved";
-            rated.textContent = "Order received · Your restaurant rating: " + "★".repeat(savedRating) + "☆".repeat(5 - savedRating) + " (" + savedRating + "/5)";
-            reportArea.append(rated);
-          } else {
-            const ratingButton = document.createElement("button");
-            ratingButton.type = "button";
-            ratingButton.className = "btn order-received-button";
-            ratingButton.textContent = "Order received · Rate restaurant";
-            ratingButton.addEventListener("click", () => {
-              ratingButton.hidden = true;
+          const orderLines = (lines || []).filter((line) => Number(line.order_id) === Number(order.id));
+          const reviewHeading = document.createElement("h4");
+          reviewHeading.textContent = "Rate the food you received";
+          reportArea.append(reviewHeading);
+          orderLines.forEach((line) => {
+            const savedReview = ratingByLine.get(String(line.id));
+            const reviewBlock = document.createElement("div");
+            reviewBlock.className = "order-item-review";
+            const itemTitle = document.createElement("p");
+            itemTitle.textContent = line.item_name + (line.preorder_request_id ? " · Private pre-order" : "");
+            reviewBlock.append(itemTitle);
+            if (savedReview) {
+              const rated = document.createElement("p");
+              rated.className = "order-rating-saved";
+              rated.textContent = "Your rating: " + "★".repeat(Number(savedReview.rating)) + "☆".repeat(5 - Number(savedReview.rating)) + " (" + savedReview.rating + "/5)" + (savedReview.review_text ? " · " + savedReview.review_text : "");
+              reviewBlock.append(rated);
+            } else {
               const ratingForm = document.createElement("form");
               ratingForm.className = "order-rating-form";
               const label = document.createElement("label");
-              label.textContent = "How would you rate this restaurant?";
+              label.textContent = "How would you rate this food?";
               const select = document.createElement("select");
               select.required = true;
-              select.setAttribute("aria-label", "Restaurant rating");
+              select.setAttribute("aria-label", "Food rating");
               const placeholder = document.createElement("option");
               placeholder.value = "";
               placeholder.textContent = "Choose a rating";
@@ -146,39 +153,47 @@ document.addEventListener("DOMContentLoaded", async () => {
                 select.append(option);
               });
               label.append(select);
+              const reviewLabel = document.createElement("label");
+              reviewLabel.textContent = "Review (optional)";
+              const reviewText = document.createElement("textarea");
+              reviewText.maxLength = 1000;
+              reviewText.rows = 2;
+              reviewText.placeholder = "What did you think of this meal?";
+              reviewLabel.append(reviewText);
               const submit = document.createElement("button");
               submit.type = "submit";
               submit.className = "btn";
-              submit.textContent = "Confirm received & submit rating";
+              submit.textContent = "Confirm received & review food";
               const cancel = document.createElement("button");
               cancel.type = "button";
               cancel.className = "btn btn-muted";
               cancel.textContent = "Cancel";
-              cancel.addEventListener("click", () => { ratingForm.remove(); ratingButton.hidden = false; });
-              ratingForm.append(label, submit, cancel);
+              cancel.addEventListener("click", () => { loadOrders(customerId); });
+              ratingForm.append(label, reviewLabel, submit, cancel);
               ratingForm.addEventListener("submit", async event => {
                 event.preventDefault();
                 submit.disabled = true;
                 try {
-                  const { error: ratingError } = await supabase.rpc("submit_restaurant_rating", {
-                    p_order_id: order.id,
-                    p_rating: Number(select.value)
+                  const { error: ratingError } = await supabase.rpc("submit_menu_item_review", {
+                    p_order_item_id: Number(line.id),
+                    p_rating: Number(select.value),
+                    p_review_text: reviewText.value.trim()
                   });
                   if (ratingError) throw ratingError;
-                  showMessage("Order received. Thank you for rating this restaurant!", false);
+                  showMessage("Receipt confirmed. Thank you for reviewing " + line.item_name + "!", false);
                   await loadOrders(customerId);
                 } catch (error) {
                   const errorText = document.createElement("p");
                   errorText.className = "order-rating-error";
-                  errorText.textContent = error.message || "Your rating could not be saved. Please try again.";
+                  errorText.textContent = error.message || "Your review could not be saved. Please try again.";
                   ratingForm.prepend(errorText);
                   submit.disabled = false;
                 }
               });
-              reportArea.append(ratingForm);
-            });
-            reportArea.append(ratingButton);
-          }
+              reviewBlock.append(ratingForm);
+            }
+            reportArea.append(reviewBlock);
+          });
         }
         card.append(reportArea); container.append(card);
       });

@@ -388,7 +388,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const { error } = await supabase.from("restaurant_dish_availability").upsert(payload, { onConflict: "restaurant_id,dish_id" });
           if (error) throw error;
           const slug = "catalog-" + dish.id + "-" + restaurant.id;
-          const menuPayload = { slug, name: dish.name, category: menuCategoryForDish(dish.category), price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", rating: 4.7, sort_order: Number(dish.sort_order || 0), is_available: available.checked };
+          const menuPayload = { slug, name: dish.name, category: menuCategoryForDish(dish.category), price: numericPrice, description: dish.description || "", image_url: dish.image_url || "", restaurant_id: restaurant.id, menu_type: menuType.value, tag: menuType.value === "everyday" ? "Everyday favourite" : "Restaurant special", sort_order: Number(dish.sort_order || 0), is_available: available.checked };
           const { error: menuError } = await supabase.from("menu_items").upsert(menuPayload, { onConflict: "slug" });
           if (menuError) throw menuError;
           await loadSharedCatalogue();
@@ -462,7 +462,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             restaurant_id: restaurant.id,
             menu_type: "everyday",
             tag: "Everyday favourite",
-            rating: 4.7,
             sort_order: Number(dish.sort_order || 0),
             is_available: nextAvailable
           }, { onConflict: "slug" });
@@ -562,7 +561,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadOrders() {
     ordersList.replaceChildren(safeElement("p", "loading-copy", "Loading incoming orders…"));
     const { data: orders, error } = await supabase.from("orders")
-      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,subtotal,delivery_fee,total,status,created_at,requested_for")
+      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,payment_status,subtotal,delivery_fee,total,status,created_at,requested_for")
       .order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     const orderIds = (orders || []).map(order => order.id);
@@ -630,7 +629,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (report.details) card.append(safeElement("p", "order-report-details", report.details));
       });
       const footer = safeElement("div", "restaurant-order-footer");
-      const payment = safeElement("span", "order-meta", "Payment preference: " + order.payment_method);
+      const paymentLabels = { paid: "Paid online", cash_due: "Cash due on delivery", cash_collected: "Cash collected", unpaid: "Payment pending", pending: "Payment pending", failed: "Payment failed", refunded: "Refunded" };
+      const payment = safeElement("span", "order-meta", "Payment: " + (paymentLabels[order.payment_status] || order.payment_method));
       footer.append(payment, safeElement("strong", "", "Total " + money(order.total)));
       const statusSelect = document.createElement("select");
       statusSelect.setAttribute("aria-label", "Update status for " + order.order_number);
