@@ -93,6 +93,7 @@ create table if not exists public.payment_allocations (
 );
 
 create index if not exists payment_allocations_checkout_idx on public.payment_allocations(checkout_session_id);
+create unique index if not exists payment_allocations_one_gateway_fee_per_checkout_idx on public.payment_allocations(checkout_session_id) where allocation_type = 'gateway_fee';
 create index if not exists payment_allocations_restaurant_status_idx on public.payment_allocations(restaurant_id, settlement_status);
 
 create table if not exists public.payment_events (
