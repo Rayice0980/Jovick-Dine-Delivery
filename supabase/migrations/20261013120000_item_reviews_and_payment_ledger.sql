@@ -30,6 +30,8 @@ create table if not exists public.checkout_sessions (
   finalized_at timestamptz,
   payment_reference text unique,
   provider_transaction_id text unique,
+  provider_fee_kobo bigint not null default 0 check (provider_fee_kobo >= 0),
+  automatic_split boolean not null default false,
   idempotency_key uuid not null,
   paid_at timestamptz,
   created_at timestamptz not null default now(),
@@ -77,8 +79,8 @@ create table if not exists public.payment_allocations (
   order_id bigint references public.orders(id) on delete restrict,
   restaurant_id uuid references public.restaurants(id) on delete restrict,
   allocation_type text not null check (allocation_type in ('restaurant_net', 'platform_commission', 'delivery_fee', 'gateway_fee', 'refund')),
-  amount integer not null check (amount >= 0),
-  commission_amount integer not null default 0 check (commission_amount >= 0),
+  amount_kobo bigint not null check (amount_kobo >= 0),
+  commission_amount_kobo bigint not null default 0 check (commission_amount_kobo >= 0),
   currency text not null default 'NGN' check (currency = 'NGN'),
   settlement_status text not null default 'pending'
     check (settlement_status in ('pending', 'ready', 'transferred', 'failed', 'reversed', 'not_applicable')),
@@ -432,26 +434,35 @@ begin
     where id = v_order.order_id;
 
     insert into public.payment_allocations(
-      checkout_session_id, order_id, restaurant_id, allocation_type, amount, commission_amount, settlement_status
+      checkout_session_id, order_id, restaurant_id, allocation_type, amount_kobo, commission_amount_kobo, settlement_status
     ) values (
       v_session.id, v_order.order_id, v_order.restaurant_id, 'restaurant_net',
-      greatest(v_order.subtotal - v_commission, 0), v_commission,
-      case when v_session.payment_method = 'paystack' then 'ready' else 'pending' end
+      greatest(v_order.subtotal - v_commission, 0) * 100, v_commission * 100,
+      case
+        when v_session.payment_method = 'paystack'
+          and v_session.automatic_split
+          and exists (
+            select 1 from public.restaurant_payment_accounts a
+            where a.restaurant_id = v_order.restaurant_id
+              and a.enabled and a.verified_at is not null and a.subaccount_code is not null
+          ) then 'ready'
+        else 'pending'
+      end
     );
 
     insert into public.payment_allocations(
-      checkout_session_id, order_id, restaurant_id, allocation_type, amount, commission_amount, settlement_status
+      checkout_session_id, order_id, restaurant_id, allocation_type, amount_kobo, commission_amount_kobo, settlement_status
     ) values (
       v_session.id, v_order.order_id, v_order.restaurant_id, 'platform_commission',
-      v_commission, v_commission,
+      v_commission * 100, v_commission * 100,
       case when v_session.payment_method = 'paystack' then 'ready' else 'pending' end
     );
   end loop;
 
   insert into public.payment_allocations(
-    checkout_session_id, allocation_type, amount, settlement_status
+    checkout_session_id, allocation_type, amount_kobo, settlement_status
   ) values (
-    v_session.id, 'delivery_fee', v_session.delivery_fee, 'pending'
+    v_session.id, 'delivery_fee', v_session.delivery_fee * 100, 'pending'
   );
 
   update public.checkout_sessions
