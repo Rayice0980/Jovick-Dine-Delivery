@@ -294,13 +294,16 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
   const stopCount = cart.subtotals.size;
   const { data: quote, error: quoteError } = await admin
     .from("delivery_fee_quotes")
-    .select("fee,delivery_plan")
+    .select("fee,delivery_plan,cash_on_delivery_enabled")
     .eq("delivery_area", area)
     .eq("restaurant_stop_count", stopCount)
     .eq("active", true)
     .maybeSingle();
   if (quoteError || !quote) {
     return json({ error: "A combined delivery quote is not configured for this area and number of restaurant stops yet. Please contact support before placing this order." }, 409);
+  }
+  if (paymentMethod === "cash_on_delivery" && !quote.cash_on_delivery_enabled) {
+    return json({ error: "Cash on delivery is not supported for this delivery route. Choose Paystack online payment instead." }, 409);
   }
 
   const total = cart.foodSubtotal + Number(quote.fee);
