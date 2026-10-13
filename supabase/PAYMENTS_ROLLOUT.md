@@ -8,7 +8,7 @@ This feature is being prepared on `feature/item-ratings-payment-ledger`. It is n
 2. Add an active row to `public.delivery_fee_quotes` for every supported delivery area and restaurant-stop count. Each row must reflect the dispatch plan that will actually be used:
    - `shared_courier` when one courier can collect from the listed restaurants and deliver to the customer.
    - `separate_couriers` when the operational plan requires separate routes.
-   The migration enforces at most one active quote for an area and stop count. No arbitrary zero-fee fallback is used.
+   The migration enforces at most one active quote for an area and stop count. Set `cash_on_delivery_enabled = true` only for routes where COD is operationally supported. No arbitrary zero-fee fallback is used.
 3. Verify each restaurant's settlement bank details and create its Paystack subaccount through the Paystack dashboard or approved onboarding process. Store only the verified `subaccount_code` in `public.restaurant_payment_accounts`, then enable that account after verification.
 4. Configure Supabase Edge Function secrets in a test environment:
    - `PAYSTACK_SECRET_KEY` — test secret key first; never place it in browser code.
