@@ -200,6 +200,7 @@ async function handleWebhook(request: Request) {
     const { error: updateError } = await admin.from("checkout_sessions").update({
       status: "paid",
       provider_transaction_id: String(verified.id),
+      provider_fee_kobo: Number(verified.fees || 0),
       paid_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }).eq("id", checkout.id).neq("status", "paid");
@@ -355,6 +356,7 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
     });
     const { error: updateError } = await admin.from("checkout_sessions").update({
       payment_reference: transaction.reference,
+      automatic_split: Boolean(splitCode),
       updated_at: new Date().toISOString(),
     }).eq("id", checkout.id);
     if (updateError) throw updateError;
@@ -403,6 +405,7 @@ async function handleVerify(userId: string, body: Record<string, unknown>) {
   const { error: updateError } = await admin.from("checkout_sessions").update({
     status: "paid",
     provider_transaction_id: String(verified.id),
+    provider_fee_kobo: Number(verified.fees || 0),
     paid_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }).eq("id", checkout.id).neq("status", "paid");
