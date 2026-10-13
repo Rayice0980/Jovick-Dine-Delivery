@@ -131,45 +131,61 @@ document.addEventListener("DOMContentLoaded", async () => {
       showNote("One or more meals are no longer available. Return to the menu and add them again.", true); return;
     }
     const values = new FormData(form);
+    let idempotencyKey = sessionStorage.getItem("jovick-checkout-idempotency");
+    if (!idempotencyKey) {
+      idempotencyKey = crypto.randomUUID();
+      sessionStorage.setItem("jovick-checkout-idempotency", idempotencyKey);
+    }
+    const requestedFor = values.get("requestedFor");
     const payload = {
-      p_customer_name: String(values.get("name") || "").trim(),
-      p_customer_phone: String(values.get("phone") || "").trim(),
-      p_customer_email: String(values.get("email") || "").trim(),
-      p_delivery_address: String(values.get("address") || "").trim(),
-      p_delivery_area: String(values.get("area") || "").trim(),
-      p_payment_method: String(values.get("payment") || "").trim(),
-      p_delivery_notes: String(values.get("notes") || "").trim(),
-      p_items: items.map((item) => item.preorderRequestId ? ({ preorder_request_id: item.preorderRequestId, qty: Number(item.qty) }) : ({ id: Number(item.id), qty: Number(item.qty) })),
-      p_requested_for: values.get("requestedFor") ? new Date(String(values.get("requestedFor"))).toISOString() : null
+      action: "create",
+      idempotency_key: idempotencyKey,
+      customer_name: String(values.get("name") || "").trim(),
+      customer_phone: String(values.get("phone") || "").trim(),
+      customer_email: String(values.get("email") || "").trim(),
+      delivery_address: String(values.get("address") || "").trim(),
+      delivery_area: String(values.get("area") || "").trim(),
+      payment_method: String(values.get("payment") || "").trim(),
+      delivery_notes: String(values.get("notes") || "").trim(),
+      items: items.map((item) => item.preorderRequestId ? ({ preorder_request_id: item.preorderRequestId, qty: Number(item.qty) }) : ({ id: Number(item.id), qty: Number(item.qty) })),
+      requested_for: requestedFor ? new Date(String(requestedFor)).toISOString() : null
     };
     submitButton.disabled = true; submitButton.setAttribute("aria-busy", "true");
-    showNote("Submitting your order securely…");
+    showNote("Checking prices and calculating your combined delivery quote…");
     try {
-      const { data, error } = await supabase.rpc("place_customer_orders", payload);
+      const { data, error } = await supabase.functions.invoke("checkout-payments", { body: payload });
       if (error) throw error;
-      const orders = Array.isArray(data) ? data : (data ? [data] : []);
+      if (payload.payment_method === "paystack") {
+        if (!data?.authorization_url) throw new Error(data?.error || "The payment page could not be opened. Please try again.");
+        showNote("Your checkout is ready. Opening Paystack securely…");
+        window.location.assign(data.authorization_url);
+        return;
+      }
+      const orders = Array.isArray(data?.orders) ? data.orders : [];
       if (!orders.length || orders.some(order => !order?.order_number)) {
         throw new Error("We couldn't confirm all order numbers. Check My Orders before trying again.");
       }
       localStorage.removeItem("jovick-cart");
       localStorage.removeItem("jovick-menu-cache");
+      sessionStorage.removeItem("jovick-checkout-idempotency");
       form.reset();
       const success = document.createElement("div"); success.className = "order-success";
       const heading = document.createElement("h3"); heading.textContent = orders.length > 1 ? "Your orders have been received!" : "Your order has been received!";
       const amount = document.createElement("p");
-      amount.textContent = "Combined order total: " + money(orders.reduce((sum, order) => sum + Number(order.total || 0), 0));
-      const status = document.createElement("p"); status.textContent = "Each business has its own order to confirm and prepare. Payment has not been processed.";
+      amount.textContent = "Combined checkout total: " + money(data.total);
+      const delivery = document.createElement("p");
+      delivery.textContent = "One combined delivery fee: " + money(data.delivery_fee);
+      const status = document.createElement("p"); status.textContent = "Cash is due on delivery. Each business has its own order to confirm and prepare.";
       const orderList = document.createElement("ul");
       orders.forEach(order => {
         const item = document.createElement("li");
         item.textContent = (order.restaurant_name || "Business") + " — Order " + order.order_number + " — " + money(order.total) + " — Awaiting confirmation";
         orderList.append(item);
       });
-      const requestedFor = values.get("requestedFor");
       const schedule = requestedFor ? document.createElement("p") : null;
       if (schedule) schedule.textContent = "Requested time: " + new Date(String(requestedFor)).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
       const link = document.createElement("a"); link.className = "btn"; link.href = "dashboard.html#orders"; link.textContent = "View my orders";
-      success.append(heading, amount, status, orderList);
+      success.append(heading, amount, delivery, status, orderList);
       if (schedule) success.append(schedule);
       success.append(link); summary.replaceChildren(success);
       showNote(orders.length > 1
