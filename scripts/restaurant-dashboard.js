@@ -562,7 +562,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadOrders() {
     ordersList.replaceChildren(safeElement("p", "loading-copy", "Loading incoming orders…"));
     const { data: orders, error } = await supabase.from("orders")
-      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,subtotal,delivery_fee,total,status,created_at,requested_for")
+      .select("id,order_number,customer_name,customer_phone,delivery_address,delivery_area,delivery_notes,payment_method,payment_status,subtotal,delivery_fee,total,status,created_at,requested_for")
       .order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     const orderIds = (orders || []).map(order => order.id);
@@ -630,7 +630,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (report.details) card.append(safeElement("p", "order-report-details", report.details));
       });
       const footer = safeElement("div", "restaurant-order-footer");
-      const payment = safeElement("span", "order-meta", "Payment preference: " + order.payment_method);
+      const paymentLabels = { paid: "Paid online", cash_due: "Cash due on delivery", cash_collected: "Cash collected", unpaid: "Payment pending", pending: "Payment pending", failed: "Payment failed", refunded: "Refunded" };
+      const payment = safeElement("span", "order-meta", "Payment: " + (paymentLabels[order.payment_status] || order.payment_method));
       footer.append(payment, safeElement("strong", "", "Total " + money(order.total)));
       const statusSelect = document.createElement("select");
       statusSelect.setAttribute("aria-label", "Update status for " + order.order_number);
