@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     container.append(loading);
     try {
       const { data: orders, error } = await supabase.from("orders")
-        .select("id, order_number, status, total, delivery_area, created_at, requested_for")
+        .select("id, order_number, status, total, delivery_area, payment_method, payment_status, created_at, requested_for")
         .eq("customer_id", customerId).order("created_at", { ascending: false });
       if (error) throw error;
       container.replaceChildren();
@@ -67,8 +67,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (order.requested_for) { const schedule = document.createElement("p"); schedule.className = "order-meta"; schedule.textContent = "Requested time: " + new Date(order.requested_for).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); card.append(schedule); }
         const footer = document.createElement("div"); footer.className = "order-history-footer";
         const area = document.createElement("span"); area.textContent = "Delivery: " + order.delivery_area;
+        const payment = document.createElement("span");
+        const paymentLabels = { paid: "Paid online", cash_due: "Cash due on delivery", cash_collected: "Cash collected", unpaid: "Payment pending", pending: "Payment pending", failed: "Payment failed", refunded: "Refunded" };
+        payment.textContent = "Payment: " + (paymentLabels[order.payment_status] || order.payment_method || "Pending");
         const total = document.createElement("strong"); total.textContent = "Total " + money(order.total);
-        footer.append(area, total); card.append(footer);
+        footer.append(area, payment, total); card.append(footer);
         const orderReports = (reports || []).filter((report) => Number(report.order_id) === Number(order.id));
         const reportArea = document.createElement("div"); reportArea.className = "order-report-area";
         if (orderReports.length) {
