@@ -7,7 +7,7 @@ const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY")!;
 const SITE_URL = Deno.env.get("SITE_URL") || "https://jovick-dine-delivery.vercel.app";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": SITE_URL,
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-paystack-signature",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Vary": "Origin",
@@ -255,7 +255,7 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
 
   const { data: existing } = await admin
     .from("checkout_sessions")
-    .select("id,customer_id,status,payment_method,total,food_subtotal,delivery_fee,payment_reference,finalized_at")
+    .select("id,customer_id,status,payment_method,total,food_subtotal,delivery_fee,payment_reference,authorization_url,automatic_split,finalized_at")
     .eq("customer_id", userId)
     .eq("idempotency_key", idempotencyKey)
     .maybeSingle();
@@ -264,8 +264,15 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
       const orders = await finalize(existing.id);
       return json({ checkout_id: existing.id, orders, total: existing.total, delivery_fee: existing.delivery_fee, reused: true });
     }
-    if (existing.payment_reference && existing.status === "pending_payment") {
-      return json({ checkout_id: existing.id, total: existing.total, delivery_fee: existing.delivery_fee, pending: true, error: "A payment attempt already exists for this checkout. Continue from the payment page or refresh My Orders." }, 409);
+    if (existing.payment_reference && existing.authorization_url && existing.status === "pending_payment") {
+      return json({
+        checkout_id: existing.id,
+        authorization_url: existing.authorization_url,
+        total: existing.total,
+        delivery_fee: existing.delivery_fee,
+        automatic_split: existing.automatic_split,
+        reused: true
+      });
     }
     return json({ error: "This checkout attempt has already been used. Refresh the page to start a new checkout." }, 409);
   }
@@ -369,6 +376,7 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
     });
     const { error: updateError } = await admin.from("checkout_sessions").update({
       payment_reference: transaction.reference,
+      authorization_url: transaction.authorization_url,
       automatic_split: Boolean(splitCode),
       updated_at: new Date().toISOString(),
     }).eq("id", checkout.id);
