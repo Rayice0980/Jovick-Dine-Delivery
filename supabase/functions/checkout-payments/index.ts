@@ -260,9 +260,17 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
     .eq("idempotency_key", idempotencyKey)
     .maybeSingle();
   if (existing) {
-    if (existing.payment_method === "cash_on_delivery" && existing.finalized_at) {
+    if (existing.payment_method === "cash_on_delivery" && existing.status === "cash_due") {
       const orders = await finalize(existing.id);
-      return json({ checkout_id: existing.id, orders, total: existing.total, delivery_fee: existing.delivery_fee, reused: true });
+      return json({
+        checkout_id: existing.id,
+        orders,
+        total: existing.total,
+        delivery_fee: existing.delivery_fee,
+        payment_method: existing.payment_method,
+        payment_status: "cash_due",
+        reused: true
+      });
     }
     if (existing.payment_reference && existing.authorization_url && existing.status === "pending_payment") {
       return json({
