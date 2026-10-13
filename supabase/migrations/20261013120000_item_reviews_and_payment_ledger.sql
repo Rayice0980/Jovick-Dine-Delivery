@@ -502,8 +502,6 @@ revoke all on function public.finalize_checkout_session(uuid) from public, anon,
 grant execute on function public.finalize_checkout_session(uuid) to service_role;
 
 revoke all on function public.place_customer_orders(text, text, text, text, text, text, text, jsonb, timestamp with time zone)
-  from public, anon, authenticated;
-grant execute on function public.place_customer_orders(text, text, text, text, text, text, text, jsonb, timestamp with time zone)
-  to service_role;
+  from public, anon, authenticated, service_role;
 
 commit;
