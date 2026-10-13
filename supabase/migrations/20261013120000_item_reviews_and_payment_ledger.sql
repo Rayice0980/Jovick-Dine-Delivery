@@ -306,4 +306,171 @@ $function$;
 revoke all on function public.get_public_available_menu() from public;
 grant execute on function public.get_public_available_menu() to anon, authenticated;
 
+
+create or replace function public.finalize_checkout_session(p_checkout_session_id uuid)
+returns table(
+  order_id bigint,
+  order_number text,
+  subtotal integer,
+  delivery_fee integer,
+  total integer,
+  status text,
+  restaurant_id uuid,
+  restaurant_name text
+)
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_session public.checkout_sessions%rowtype;
+  v_order record;
+  v_counter integer := 0;
+  v_order_count integer := 0;
+  v_delivery_share integer := 0;
+  v_delivery_assigned integer := 0;
+  v_commission integer := 0;
+  v_payment_label text;
+  v_legacy_payment text;
+begin
+  select * into v_session
+  from public.checkout_sessions
+  where id = p_checkout_session_id
+  for update;
+
+  if not found then
+    raise exception 'Checkout could not be found.';
+  end if;
+
+  if v_session.finalized_at is not null then
+    return query
+      select o.id, o.order_number, o.subtotal, o.delivery_fee, o.total, o.status,
+             r.id, r.name
+      from public.orders o
+      join public.order_items oi on oi.order_id = o.id
+      join public.restaurants r on r.id = oi.restaurant_id
+      where o.checkout_session_id = v_session.id
+      group by o.id, o.order_number, o.subtotal, o.delivery_fee, o.total, o.status, r.id, r.name
+      order by r.name;
+    return;
+  end if;
+
+  if v_session.payment_method = 'paystack' and v_session.status <> 'paid' then
+    raise exception 'The online payment has not been verified.';
+  end if;
+  if v_session.payment_method = 'cash_on_delivery' and v_session.status <> 'cash_due' then
+    raise exception 'This cash-on-delivery checkout is not ready to finalize.';
+  end if;
+
+  select count(*)::integer into v_order_count
+  from (
+    select distinct coalesce(m.restaurant_id, d.accepted_restaurant_id) as restaurant_id
+    from jsonb_array_elements(v_session.cart_items) e(value)
+    left join public.menu_items m
+      on not (e.value ? 'preorder_request_id') and m.id = (e.value->>'id')::bigint
+    left join public.dish_preorder_requests d
+      on e.value ? 'preorder_request_id' and d.id = (e.value->>'preorder_request_id')::uuid
+    where coalesce(m.restaurant_id, d.accepted_restaurant_id) is not null
+  ) s;
+
+  if v_order_count < 1 or v_order_count <> v_session.restaurant_stop_count then
+    raise exception 'The restaurant list changed during checkout. Please start checkout again.';
+  end if;
+
+  perform pg_catalog.set_config('request.jwt.claim.sub', v_session.customer_id::text, true);
+  perform pg_catalog.set_config(
+    'request.jwt.claims',
+    pg_catalog.jsonb_build_object('sub', v_session.customer_id::text, 'role', 'authenticated')::text,
+    true
+  );
+
+  v_legacy_payment := case
+    when v_session.payment_method = 'cash_on_delivery' then 'Cash on delivery (if available)'
+    else 'Bank transfer (confirm with business)'
+  end;
+  v_payment_label := case
+    when v_session.payment_method = 'cash_on_delivery' then 'Cash on delivery (if available)'
+    else 'Paystack online payment'
+  end;
+
+  for v_order in
+    select * from public.place_customer_orders(
+      v_session.customer_name,
+      v_session.customer_phone,
+      v_session.customer_email,
+      v_session.delivery_address,
+      v_session.delivery_area,
+      v_legacy_payment,
+      v_session.delivery_notes,
+      v_session.cart_items,
+      v_session.requested_for
+    )
+  loop
+    v_counter := v_counter + 1;
+    if v_counter = v_order_count then
+      v_delivery_share := v_session.delivery_fee - v_delivery_assigned;
+    else
+      v_delivery_share := floor(
+        (v_session.delivery_fee::numeric * v_order.subtotal::numeric) /
+        v_session.food_subtotal::numeric
+      )::integer;
+      v_delivery_assigned := v_delivery_assigned + v_delivery_share;
+    end if;
+
+    v_commission := round(v_order.subtotal::numeric * v_session.commission_rate)::integer;
+
+    update public.orders
+      set checkout_session_id = v_session.id,
+          delivery_fee = v_delivery_share,
+          total = subtotal + v_delivery_share,
+          payment_method = v_payment_label,
+          payment_status = case
+            when v_session.payment_method = 'cash_on_delivery' then 'cash_due'
+            else 'paid'
+          end,
+          customer_received_at = null
+    where id = v_order.order_id;
+
+    insert into public.payment_allocations(
+      checkout_session_id, order_id, restaurant_id, allocation_type, amount, commission_amount, settlement_status
+    ) values (
+      v_session.id, v_order.order_id, v_order.restaurant_id, 'restaurant_net',
+      greatest(v_order.subtotal - v_commission, 0), v_commission,
+      case when v_session.payment_method = 'paystack' then 'ready' else 'pending' end
+    );
+
+    insert into public.payment_allocations(
+      checkout_session_id, order_id, restaurant_id, allocation_type, amount, commission_amount, settlement_status
+    ) values (
+      v_session.id, v_order.order_id, v_order.restaurant_id, 'platform_commission',
+      v_commission, v_commission,
+      case when v_session.payment_method = 'paystack' then 'ready' else 'pending' end
+    );
+  end loop;
+
+  insert into public.payment_allocations(
+    checkout_session_id, allocation_type, amount, settlement_status
+  ) values (
+    v_session.id, 'delivery_fee', v_session.delivery_fee, 'pending'
+  );
+
+  update public.checkout_sessions
+    set finalized_at = now(), updated_at = now()
+  where id = v_session.id;
+
+  return query
+    select o.id, o.order_number, o.subtotal, o.delivery_fee, o.total, o.status,
+           r.id, r.name
+    from public.orders o
+    join public.order_items oi on oi.order_id = o.id
+    join public.restaurants r on r.id = oi.restaurant_id
+    where o.checkout_session_id = v_session.id
+    group by o.id, o.order_number, o.subtotal, o.delivery_fee, o.total, o.status, r.id, r.name
+    order by r.name;
+end;
+$;
+
+revoke all on function public.finalize_checkout_session(uuid) from public, anon, authenticated;
+grant execute on function public.finalize_checkout_session(uuid) to service_role;
+
 commit;
