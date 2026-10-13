@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Verify your Jovick Dine Delivery payment." />
+    <title>Payment status | Jovick Dine Delivery</title>
+    <link rel="stylesheet" href="styles/checkout.css" />
+  </head>
+  <body data-page="payment-result">
+    <div id="siteHeader"></div>
+    <main>
+      <section class="page-hero">
+        <div class="container">
+          <span class="eyebrow">Secure checkout</span>
+          <h1>Payment status.</h1>
+          <p>We verify payments with Paystack before releasing restaurant orders.</p>
+        </div>
+      </section>
+      <section class="page-content">
+        <div class="container">
+          <div class="form-card" id="paymentResult" role="status" aria-live="polite">
+            <h2>Verifying your payment…</h2>
+            <p>Please keep this page open while we confirm the transaction.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div id="siteFooter"></div>
+    <script src="scripts/app.js" defer></script>
+    <script type="module" src="scripts/payment-result.js"></script>
+  </body>
+</html>
