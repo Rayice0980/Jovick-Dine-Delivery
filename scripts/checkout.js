@@ -197,6 +197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
           const details = await error.context.json();
           if (details?.error) message = details.error;
+          if (details?.retry_with_new_key) sessionStorage.removeItem("jovick-checkout-idempotency");
         } catch {}
       }
       showNote(message, true);
