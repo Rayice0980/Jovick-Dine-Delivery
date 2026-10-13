@@ -194,9 +194,10 @@ async function handleWebhook(request: Request) {
       .eq("payment_reference", reference)
       .maybeSingle();
     if (checkoutError || !checkout) return json({ error: "Checkout reference not found." }, 404);
-    if (verified.status !== "success" || verified.currency !== checkout.currency ||
+    if (verified.status !== "success" || verified.reference !== reference ||
+      verified.currency !== checkout.currency ||
       Number(verified.amount) !== Number(checkout.total) * 100 ||
-      (verified.metadata?.checkout_id && verified.metadata.checkout_id !== checkout.id)) {
+      verified.metadata?.checkout_id !== checkout.id) {
       return json({ error: "The verified payment does not match this checkout." }, 400);
     }
 
