@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               cancel.type = "button";
               cancel.className = "btn btn-muted";
               cancel.textContent = "Cancel";
-              cancel.addEventListener("click", () => { ratingForm.remove(); reviewBlock.append(makeReviewButton(line)); });
+              cancel.addEventListener("click", () => { loadOrders(customerId); });
               ratingForm.append(label, reviewLabel, submit, cancel);
               ratingForm.addEventListener("submit", async event => {
                 event.preventDefault();
