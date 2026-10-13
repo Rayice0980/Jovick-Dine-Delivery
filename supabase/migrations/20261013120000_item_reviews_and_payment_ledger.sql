@@ -57,6 +57,7 @@ create table if not exists public.delivery_fee_quotes (
   delivery_plan text not null check (delivery_plan in ('shared_courier', 'separate_couriers')),
   fee integer not null check (fee >= 0),
   active boolean not null default false,
+  cash_on_delivery_enabled boolean not null default false,
   updated_at timestamptz not null default now(),
   unique (delivery_area, restaurant_stop_count, delivery_plan)
 );
