@@ -283,7 +283,10 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
         reused: true
       });
     }
-    return json({ error: "This checkout attempt has already been used. Refresh the page to start a new checkout." }, 409);
+    if (existing.status === "payment_failed") {
+      return json({ error: "This payment attempt failed. Start a new checkout attempt.", retry_with_new_key: true }, 409);
+    }
+    return json({ error: "This checkout is still being prepared. Please wait briefly and try again." }, 409);
   }
 
   const cart = await validateCart(userId, body.items);
@@ -405,7 +408,10 @@ async function handleCreate(userId: string, body: Record<string, unknown>) {
       status: "payment_failed",
       updated_at: new Date().toISOString(),
     }).eq("id", checkout.id);
-    throw error;
+    return json({
+      error: error instanceof Error ? error.message : "Paystack could not initialize this payment.",
+      retry_with_new_key: true
+    }, 502);
   }
 }
 
