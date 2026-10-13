@@ -29,6 +29,7 @@ create table if not exists public.checkout_sessions (
   cart_items jsonb not null check (jsonb_typeof(cart_items) = 'array'),
   finalized_at timestamptz,
   payment_reference text unique,
+  authorization_url text,
   provider_transaction_id text unique,
   provider_fee_kobo bigint not null default 0 check (provider_fee_kobo >= 0),
   automatic_split boolean not null default false,
