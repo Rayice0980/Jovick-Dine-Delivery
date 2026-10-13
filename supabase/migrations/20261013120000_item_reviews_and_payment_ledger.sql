@@ -136,6 +136,9 @@ alter table public.menu_item_reviews enable row level security;
 
 revoke all on public.checkout_sessions, public.delivery_fee_quotes, public.restaurant_payment_accounts,
   public.payment_allocations, public.payment_events, public.menu_item_reviews from anon, authenticated;
+grant all on public.checkout_sessions, public.delivery_fee_quotes, public.restaurant_payment_accounts,
+  public.payment_allocations, public.payment_events, public.menu_item_reviews to service_role;
+grant usage, select on sequence public.payment_events_id_seq, public.menu_item_reviews_id_seq to service_role;
 grant select on public.checkout_sessions, public.menu_item_reviews to authenticated;
 
 drop policy if exists "Customers can read their own checkout sessions" on public.checkout_sessions;
