@@ -93,8 +93,8 @@
                 <label for="checkoutPayment">Preferred payment</label
                 ><select id="checkoutPayment" name="payment" required>
                   <option value="">Choose payment</option>
-                  <option>Cash on delivery (if available)</option>
-                  <option>Bank transfer (confirm with business)</option>
+                  <option value="paystack">Pay online securely with Paystack</option>
+                  <option value="cash_on_delivery">Cash on delivery (supported areas only)</option>
                 </select>
               </div>
             </div>
@@ -122,12 +122,11 @@
               </p>
             </div>
             <div class="cart-total">
-              <span>Delivery fee</span><span>Confirmed by business</span>
+              <span>Combined delivery fee</span><span>Calculated from the configured courier plan</span>
             </div>
             <p class="form-note">
               Prices are checked against the current menu when you submit.
-              Delivery fee is currently set to ₦0 pending business configuration.
-              Payment preferences are recorded; no payment is processed here.
+              Your final total includes one combined delivery fee based on the configured delivery plan. Online payments are verified securely before restaurant orders are released.
             </p>
             <a class="btn btn-outline" style="width: 100%" href="foods.html"
               >Back to menu</a
