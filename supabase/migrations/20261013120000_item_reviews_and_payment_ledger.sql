@@ -153,6 +153,18 @@ create policy "Customers can read their own item reviews"
 on public.menu_item_reviews for select to authenticated
 using (customer_id = (select auth.uid()));
 
+drop policy if exists "Restaurant owners can read public reviews for their menu items" on public.menu_item_reviews;
+create policy "Restaurant owners can read public reviews for their menu items"
+on public.menu_item_reviews for select to authenticated
+using (
+  is_public
+  and exists (
+    select 1 from public.restaurants r
+    where r.id = menu_item_reviews.restaurant_id
+      and r.owner_id = (select auth.uid())
+  )
+);
+
 drop trigger if exists sync_menu_item_restaurant_rating on public.menu_items;
 drop function if exists public.sync_menu_item_restaurant_rating();
 
