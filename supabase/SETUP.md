@@ -6,7 +6,7 @@ This project uses plain HTML, CSS and JavaScript with the pinned Supabase JavaSc
 
 The dedicated project is **Jovick Dine Delivery** in the **Jovick Travel & Tours** organization, region London (eu-west-2).
 
-- Project URL: https://iveyrlvlejpdrbymsjsw.supabase.co
+- Project URL: <https://iveyrlvlejpdrbymsjsw.supabase.co>
 - Project reference: iveyrlvlejpdrbymsjsw
 - Public publishable key: configured in scripts/supabase-config.js
 
